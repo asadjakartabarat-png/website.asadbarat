@@ -65,7 +65,7 @@ export default function AdminLayout({
     getUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: any, session: any) => {
+      (event: string, session: any) => {
         if (event === 'SIGNED_OUT' || !session) {
           setUser(null);
           router.push('/admin/login');
