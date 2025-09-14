@@ -41,7 +41,6 @@ export default function ShareButtons({ url, title }: ShareButtonsProps) {
         await navigator.clipboard.writeText(url);
         alert('Link berhasil disalin!');
       } else {
-        // Fallback for older browsers
         const textArea = document.createElement('textarea');
         textArea.value = url;
         document.body.appendChild(textArea);
@@ -100,6 +99,4 @@ export default function ShareButtons({ url, title }: ShareButtonsProps) {
     </div>
   );
 }
-    </div>
-  );
 }
