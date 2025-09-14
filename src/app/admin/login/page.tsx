@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -9,27 +8,17 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    // BYPASS TOTAL - langsung redirect jika credentials benar
-    if (email === 'admin@asadjakbar.com' && password === 'admin123') {
-      // Set cookie
-      document.cookie = 'admin-session=logged-in; path=/; max-age=86400';
-      
-      // Direct redirect
-      window.location.replace('/admin/dashboard');
-      return;
-    }
     
-    setError('Invalid credentials');
-    setLoading(false);
+    // SIMPLE CHECK - langsung redirect
+    if (email === 'admin@asadjakbar.com' && password === 'admin123') {
+      // Langsung redirect tanpa cookie atau apapun
+      window.location.href = '/admin/dashboard';
+    } else {
+      alert('Email atau password salah!');
+    }
   };
 
   return (
@@ -57,22 +46,18 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="admin123"
                 required
               />
             </div>
 
-            {error && (
-              <div className="text-red-600 text-sm">{error}</div>
-            )}
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Logging in...' : 'Login'}
+            <Button type="submit" className="w-full">
+              Login
             </Button>
           </form>
 
           <div className="mt-4 text-center text-sm text-gray-600">
-            <p>Default credentials:</p>
+            <p><strong>Credentials:</strong></p>
             <p>Email: admin@asadjakbar.com</p>
             <p>Password: admin123</p>
           </div>
