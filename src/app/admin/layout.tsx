@@ -38,31 +38,18 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    const checkAuth = () => {
-      // Check cookie instead of Supabase auth
-      const cookies = document.cookie.split(';');
-      const sessionCookie = cookies.find(c => c.trim().startsWith('admin-session='));
-      
-      if (sessionCookie) {
-        // Set dummy user if cookie exists
-        setUser({
-          id: 'admin-user',
-          email: 'admin@asadjakbar.com',
-          full_name: 'Admin Asad Jakbar',
-          role: 'super_admin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        } as User);
-      } else if (pathname !== '/admin/login') {
-        // Redirect to login if no cookie and not on login page
-        router.push('/admin/login');
-      }
-      
-      setLoading(false);
-    };
-
-    checkAuth();
-  }, [setUser, setLoading, router, pathname]);
+    // BYPASS AUTH - langsung set user
+    setUser({
+      id: 'admin-user',
+      email: 'admin@asadjakbar.com',
+      full_name: 'Admin Asad Jakbar',
+      role: 'super_admin',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    } as User);
+    
+    setLoading(false);
+  }, [setUser, setLoading]);
 
   const handleLogout = () => {
     // Clear cookie instead of Supabase signOut
@@ -87,11 +74,7 @@ export default function AdminLayout({
     return children;
   }
 
-  // Redirect to login if no user and not loading
-  if (!loading && !user && pathname !== '/admin/login') {
-    router.push('/admin/login');
-    return null;
-  }
+  // Skip auth check - always allow access
 
   return (
     <div className="min-h-screen bg-gray-50">
