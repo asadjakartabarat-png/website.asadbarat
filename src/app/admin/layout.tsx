@@ -38,52 +38,38 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    const getUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (error) {
-            console.error('Error fetching user data:', error);
-          } else if (userData) {
-            setUser(userData as User);
-          }
-        }
-      } catch (error) {
-        console.error('Error in getUser:', error);
-      } finally {
-        setLoading(false);
+    const checkAuth = () => {
+      // Check cookie instead of Supabase auth
+      const cookies = document.cookie.split(';');
+      const sessionCookie = cookies.find(c => c.trim().startsWith('admin-session='));
+      
+      if (sessionCookie) {
+        // Set dummy user if cookie exists
+        setUser({
+          id: 'admin-user',
+          email: 'admin@asadjakbar.com',
+          full_name: 'Admin Asad Jakbar',
+          role: 'super_admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as User);
+      } else if (pathname !== '/admin/login') {
+        // Redirect to login if no cookie and not on login page
+        router.push('/admin/login');
       }
+      
+      setLoading(false);
     };
 
-    getUser();
+    checkAuth();
+  }, [setUser, setLoading, router, pathname]);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event: string, session: any) => {
-        if (event === 'SIGNED_OUT' || !session) {
-          setUser(null);
-          router.push('/admin/login');
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [setUser, setLoading, router]);
-
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      toast.success('Logout berhasil');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Gagal logout');
-    }
+  const handleLogout = () => {
+    // Clear cookie instead of Supabase signOut
+    document.cookie = 'admin-session=; path=/; max-age=0';
+    setUser(null);
+    router.push('/admin/login');
+    toast.success('Logout berhasil');
   };
 
   if (loading) {
@@ -101,17 +87,10 @@ export default function AdminLayout({
     return children;
   }
 
-  // Bypass auth check sementara
-  if (!user) {
-    // Set dummy user untuk bypass
-    setUser({
-      id: 'dummy',
-      email: 'admin@asadjakbar.com',
-      full_name: 'Admin Asad Jakbar',
-      role: 'super_admin',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    } as User);
+  // Redirect to login if no user and not loading
+  if (!loading && !user && pathname !== '/admin/login') {
+    router.push('/admin/login');
+    return null;
   }
 
   return (
