@@ -39,10 +39,7 @@ export default function ShareButtons({ url, title }: ShareButtonsProps) {
     try {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(url);
-        // Use toast instead of alert for better UX
-        if (typeof window !== 'undefined' && window.alert) {
-          alert('Link berhasil disalin!');
-        }
+        alert('Link berhasil disalin!');
       } else {
         // Fallback for older browsers
         const textArea = document.createElement('textarea');
@@ -100,6 +97,9 @@ export default function ShareButtons({ url, title }: ShareButtonsProps) {
         <Share2 className="w-4 h-4" />
         <span>Salin</span>
       </Button>
+    </div>
+  );
+}
     </div>
   );
 }
