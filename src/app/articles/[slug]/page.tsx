@@ -22,8 +22,8 @@ async function getArticle(slug: string): Promise<Article | null> {
     .from('articles')
     .select(`
       *,
-      category:categories!articles_category_id_fkey(name, slug),
-      author:users!articles_author_id_fkey(full_name)
+      categories!articles_category_id_fkey(name, slug),
+      users!articles_author_id_fkey(full_name)
     `)
     .eq('slug', slug)
     .eq('status', 'published')
@@ -43,8 +43,8 @@ async function getRelatedArticles(categoryId: string, currentId: string): Promis
     .from('articles')
     .select(`
       *,
-      category:categories!articles_category_id_fkey(name, slug),
-      author:users!articles_author_id_fkey(full_name)
+      categories!articles_category_id_fkey(name, slug),
+      users!articles_author_id_fkey(full_name)
     `)
     .eq('category_id', categoryId)
     .eq('status', 'published')
@@ -99,14 +99,14 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             <ol className="flex items-center space-x-2 text-sm text-gray-500">
               <li><Link href="/" className="hover:text-primary-500">Beranda</Link></li>
               <li>/</li>
-              {article.category && (
+              {(article.categories || article.category) && (
                 <>
                   <li>
                     <Link 
-                      href={`/categories/${article.category.slug}`}
+                      href={`/categories/${(article.categories || article.category)?.slug}`}
                       className="hover:text-primary-500"
                     >
-                      {article.category.name}
+                      {(article.categories || article.category)?.name}
                     </Link>
                   </li>
                   <li>/</li>
@@ -118,12 +118,12 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
           {/* Article Header */}
           <header className="mb-8">
-            {article.category && (
+            {(article.categories || article.category) && (
               <Link
-                href={`/categories/${article.category.slug}`}
+                href={`/categories/${(article.categories || article.category)?.slug}`}
                 className="inline-block text-primary-500 hover:text-primary-600 font-medium mb-4"
               >
-                {article.category.name}
+                {(article.categories || article.category)?.name}
               </Link>
             )}
             
@@ -133,8 +133,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center text-gray-600 space-x-4">
-                {article.author && (
-                  <span>Oleh {article.author.full_name}</span>
+                {(article.users || article.author) && (
+                  <span>Oleh {(article.users || article.author)?.full_name}</span>
                 )}
                 <span>•</span>
                 <time>{formatDateTime(article.published_at || article.created_at)}</time>

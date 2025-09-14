@@ -28,12 +28,12 @@ export default function ArticleCard({ article }: ArticleCardProps) {
       </Link>
       
       <div className="p-4">
-        {article.category && (
+        {(article.categories || article.category) && (
           <Link
-            href={`/categories/${article.category.slug}`}
+            href={`/categories/${(article.categories || article.category)?.slug}`}
             className="inline-block text-primary-500 hover:text-primary-600 text-sm font-medium mb-2"
           >
-            {article.category.name}
+            {(article.categories || article.category)?.name}
           </Link>
         )}
         
@@ -48,8 +48,8 @@ export default function ArticleCard({ article }: ArticleCardProps) {
         </p>
         
         <div className="flex items-center justify-between text-xs text-gray-500">
-          {article.author && (
-            <span>{article.author.full_name}</span>
+          {(article.users || article.author) && (
+            <span>{(article.users || article.author)?.full_name}</span>
           )}
           <span>{formatDate(article.published_at || article.created_at)}</span>
         </div>

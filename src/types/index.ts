@@ -32,6 +32,8 @@ export interface Article {
   meta_description?: string;
   category?: Category;
   author?: User;
+  categories?: Category;
+  users?: User;
 }
 
 export interface Media {

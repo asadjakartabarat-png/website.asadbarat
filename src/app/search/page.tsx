@@ -24,8 +24,8 @@ async function searchArticles(query: string): Promise<Article[]> {
     .from('articles')
     .select(`
       id, title, slug, excerpt, featured_image, published_at, created_at,
-      category:categories!articles_category_id_fkey(name, slug),
-      author:users!articles_author_id_fkey(full_name)
+      categories!articles_category_id_fkey(name, slug),
+      users!articles_author_id_fkey(full_name)
     `)
     .eq('status', 'published')
     .ilike('title', `%${sanitizedQuery}%`)

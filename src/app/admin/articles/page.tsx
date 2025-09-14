@@ -14,8 +14,8 @@ async function getArticles(): Promise<Article[]> {
     .from('articles')
     .select(`
       *,
-      category:categories!articles_category_id_fkey(name, slug),
-      author:users!articles_author_id_fkey(full_name)
+      categories!articles_category_id_fkey(name, slug),
+      users!articles_author_id_fkey(full_name)
     `)
     .order('created_at', { ascending: false });
 
@@ -73,14 +73,14 @@ export default async function ArticlesPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        {article.category && (
+                        {(article.categories || article.category) && (
                           <span className="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">
-                            {article.category.name}
+                            {(article.categories || article.category)?.name}
                           </span>
                         )}
                       </td>
                       <td className="py-3 px-4 text-gray-600">
-                        {article.author?.full_name}
+                        {(article.users || article.author)?.full_name}
                       </td>
                       <td className="py-3 px-4">
                         <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${

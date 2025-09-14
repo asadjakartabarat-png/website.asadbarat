@@ -12,8 +12,8 @@ async function getLatestArticles(): Promise<Article[]> {
     .from('articles')
     .select(`
       id, title, slug, excerpt, featured_image, published_at, created_at,
-      category:categories!articles_category_id_fkey(name, slug),
-      author:users!articles_author_id_fkey(full_name)
+      categories!articles_category_id_fkey(name, slug),
+      users!articles_author_id_fkey(full_name)
     `)
     .eq('status', 'published')
     .order('published_at', { ascending: false })
@@ -34,8 +34,8 @@ async function getFeaturedArticle(): Promise<Article | null> {
     .from('articles')
     .select(`
       id, title, slug, excerpt, featured_image, published_at, created_at,
-      category:categories!articles_category_id_fkey(name, slug),
-      author:users!articles_author_id_fkey(full_name)
+      categories!articles_category_id_fkey(name, slug),
+      users!articles_author_id_fkey(full_name)
     `)
     .eq('status', 'published')
     .order('published_at', { ascending: false })

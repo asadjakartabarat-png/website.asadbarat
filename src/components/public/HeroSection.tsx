@@ -17,12 +17,12 @@ export default function HeroSection({ article }: HeroSectionProps) {
               <span className="inline-block bg-primary-500 text-white px-3 py-1 rounded-full text-sm font-medium">
                 Breaking News
               </span>
-              {article.category && (
+              {(article.categories || article.category) && (
                 <Link
-                  href={`/categories/${article.category.slug}`}
+                  href={`/categories/${(article.categories || article.category)?.slug}`}
                   className="inline-block ml-2 text-primary-500 hover:text-primary-600 font-medium"
                 >
-                  {article.category.name}
+                  {(article.categories || article.category)?.name}
                 </Link>
               )}
             </div>
@@ -38,8 +38,8 @@ export default function HeroSection({ article }: HeroSectionProps) {
             </p>
             
             <div className="flex items-center text-sm text-gray-500 space-x-4">
-              {article.author && (
-                <span>Oleh {article.author.full_name}</span>
+              {(article.users || article.author) && (
+                <span>Oleh {(article.users || article.author)?.full_name}</span>
               )}
               <span>•</span>
               <span>{formatDate(article.published_at || article.created_at)}</span>
