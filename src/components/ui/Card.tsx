@@ -1,14 +1,14 @@
 import { HTMLAttributes, forwardRef } from 'react';
-import { cn } from '@/lib/utils';
+
 
 const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(
+      className={[
         'rounded-lg border border-gray-200 bg-white text-gray-950 shadow-sm',
-        className
-      )}
+        className || ''
+      ].filter(Boolean).join(' ')}
       {...props}
     />
   )
@@ -19,7 +19,10 @@ const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('flex flex-col space-y-1.5 p-6', className)}
+      className={[
+        'flex flex-col space-y-1.5 p-6',
+        className || ''
+      ].filter(Boolean).join(' ')}
       {...props}
     />
   )
@@ -30,7 +33,10 @@ const CardTitle = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLHeadingEle
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn('text-2xl font-semibold leading-none tracking-tight', className)}
+      className={[
+        'text-2xl font-semibold leading-none tracking-tight',
+        className || ''
+      ].filter(Boolean).join(' ')}
       {...props}
     />
   )
@@ -39,7 +45,10 @@ CardTitle.displayName = 'CardTitle';
 
 const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
+    <div ref={ref} className={[
+      'p-6 pt-0',
+      className || ''
+    ].filter(Boolean).join(' ')} {...props} />
   )
 );
 CardContent.displayName = 'CardContent';
