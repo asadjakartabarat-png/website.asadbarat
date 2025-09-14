@@ -94,7 +94,7 @@ export default function AdminLayout({
         </nav>
 
         <div className="absolute bottom-0 w-full p-4 border-t">
-          <Link href="/admin/login">
+          <Link href="/admin/login" className="block">
             <Button
               variant="ghost"
               className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -103,45 +103,6 @@ export default function AdminLayout({
               Logout
             </Button>
           </Link>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="lg:pl-64">
-        {/* Top bar */}
-        <div className="sticky top-0 z-10 bg-white shadow-sm border-b">
-          <div className="flex items-center justify-between h-16 px-6">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
-            
-            <div className="flex items-center space-x-4">
-              <Link href="/" target="_blank" className="text-sm text-gray-600 hover:text-gray-900">
-                Lihat Website
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Page content */}
-        <main className="p-6">
-          {children}
-        </main>
-      </div>
-    </div>
-  );
-}
-            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={handleLogout}
-          >
-            <LogOut className="w-5 h-5 mr-3" />
-            Logout
-          </Button>
         </div>
       </div>
 
