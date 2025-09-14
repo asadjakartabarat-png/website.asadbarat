@@ -28,9 +28,11 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Set session cookie
-        document.cookie = `admin-session=${data.token}; path=/; max-age=86400`;
-        router.push('/admin/dashboard');
+        // Set session cookie dengan domain
+        document.cookie = `admin-session=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+        
+        // Force reload untuk ensure cookie terset
+        window.location.href = '/admin/dashboard';
       } else {
         setError(data.error || 'Login failed');
       }
