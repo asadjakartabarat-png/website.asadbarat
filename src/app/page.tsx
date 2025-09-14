@@ -24,7 +24,7 @@ async function getLatestArticles(): Promise<Article[]> {
     return [];
   }
 
-  return (data || []) as Article[];
+  return (data || []) as unknown as Article[];
 }
 
 async function getFeaturedArticle(): Promise<Article | null> {
@@ -47,7 +47,7 @@ async function getFeaturedArticle(): Promise<Article | null> {
     return null;
   }
 
-  return data as Article;
+  return data as unknown as Article;
 }
 
 export default async function HomePage() {

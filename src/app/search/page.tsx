@@ -36,7 +36,7 @@ async function searchArticles(query: string): Promise<Article[]> {
     return [];
   }
 
-  return (data || []) as Article[];
+  return (data || []) as unknown as Article[];
 }
 
 function SearchResults({ query }: { query: string }) {
@@ -48,7 +48,7 @@ function SearchResults({ query }: { query: string }) {
 }
 
 async function SearchResultsContent({ query }: { query: string }) {
-  const articles = await searchArticles(query) as Article[];
+  const articles = await searchArticles(query);
   
   // Sanitize query for display to prevent XSS
   const sanitizedQuery = query.replace(/[<>"'&]/g, (match) => {

@@ -46,7 +46,7 @@ async function getCategoryArticles(categoryId: string): Promise<Article[]> {
     return [];
   }
 
-  return (data || []) as Article[];
+  return (data || []) as unknown as Article[];
 }
 
 export async function generateMetadata({ params }: CategoryPageProps) {

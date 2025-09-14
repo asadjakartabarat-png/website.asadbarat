@@ -24,7 +24,7 @@ async function getArticles(): Promise<Article[]> {
     return [];
   }
 
-  return (data || []) as Article[];
+  return (data || []) as unknown as Article[];
 }
 
 export default async function ArticlesPage() {
