@@ -49,7 +49,7 @@ async function getRecentArticles() {
       title,
       status,
       created_at,
-      author:users(full_name)
+      author:users!articles_author_id_fkey(full_name)
     `)
     .order('created_at', { ascending: false })
     .limit(5);
@@ -140,7 +140,7 @@ export default async function DashboardPage() {
                   <div>
                     <h3 className="font-medium text-gray-900">{article.title}</h3>
                     <p className="text-sm text-gray-600">
-                      Oleh {article.author?.full_name} • {new Date(article.created_at).toLocaleDateString('id-ID')}
+                      Oleh {article.author?.full_name || 'Unknown'} • {new Date(article.created_at).toLocaleDateString('id-ID')}
                     </p>
                   </div>
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${

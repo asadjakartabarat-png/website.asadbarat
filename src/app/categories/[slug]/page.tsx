@@ -35,8 +35,8 @@ async function getCategoryArticles(categoryId: string): Promise<Article[]> {
     .from('articles')
     .select(`
       *,
-      category:categories(name, slug),
-      author:users(full_name)
+      category:categories!articles_category_id_fkey(name, slug),
+      author:users!articles_author_id_fkey(full_name)
     `)
     .eq('category_id', categoryId)
     .eq('status', 'published')

@@ -22,8 +22,8 @@ async function getArticle(slug: string): Promise<Article | null> {
     .from('articles')
     .select(`
       *,
-      category:categories(name, slug),
-      author:users(full_name)
+      category:categories!articles_category_id_fkey(name, slug),
+      author:users!articles_author_id_fkey(full_name)
     `)
     .eq('slug', slug)
     .eq('status', 'published')
@@ -43,8 +43,8 @@ async function getRelatedArticles(categoryId: string, currentId: string): Promis
     .from('articles')
     .select(`
       *,
-      category:categories(name, slug),
-      author:users(full_name)
+      category:categories!articles_category_id_fkey(name, slug),
+      author:users!articles_author_id_fkey(full_name)
     `)
     .eq('category_id', categoryId)
     .eq('status', 'published')
