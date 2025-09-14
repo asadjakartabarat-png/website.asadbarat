@@ -23,7 +23,7 @@ async function searchArticles(query: string): Promise<Article[]> {
   const { data, error } = await supabase
     .from('articles')
     .select(`
-      id, title, slug, excerpt, featured_image, published_at, created_at,
+      id, title, slug, excerpt, featured_image, published_at, created_at, content, category_id, author_id, status, updated_at,
       categories!articles_category_id_fkey(name, slug),
       users!articles_author_id_fkey(full_name)
     `)
