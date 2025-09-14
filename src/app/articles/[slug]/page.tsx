@@ -33,7 +33,7 @@ async function getArticle(slug: string): Promise<Article | null> {
     return null;
   }
 
-  return data;
+  return data as Article;
 }
 
 async function getRelatedArticles(categoryId: string, currentId: string): Promise<Article[]> {
@@ -56,7 +56,7 @@ async function getRelatedArticles(categoryId: string, currentId: string): Promis
     return [];
   }
 
-  return data || [];
+  return (data || []) as Article[];
 }
 
 export async function generateMetadata({ params }: ArticlePageProps) {

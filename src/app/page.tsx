@@ -11,7 +11,7 @@ async function getLatestArticles(): Promise<Article[]> {
   const { data, error } = await supabase
     .from('articles')
     .select(`
-      id, title, slug, excerpt, featured_image, published_at, created_at,
+      id, title, slug, excerpt, featured_image, published_at, created_at, content, category_id, author_id, status, updated_at,
       categories!articles_category_id_fkey(name, slug),
       users!articles_author_id_fkey(full_name)
     `)
@@ -24,7 +24,7 @@ async function getLatestArticles(): Promise<Article[]> {
     return [];
   }
 
-  return data || [];
+  return (data || []) as Article[];
 }
 
 async function getFeaturedArticle(): Promise<Article | null> {
@@ -33,7 +33,7 @@ async function getFeaturedArticle(): Promise<Article | null> {
   const { data, error } = await supabase
     .from('articles')
     .select(`
-      id, title, slug, excerpt, featured_image, published_at, created_at,
+      id, title, slug, excerpt, featured_image, published_at, created_at, content, category_id, author_id, status, updated_at,
       categories!articles_category_id_fkey(name, slug),
       users!articles_author_id_fkey(full_name)
     `)
@@ -47,7 +47,7 @@ async function getFeaturedArticle(): Promise<Article | null> {
     return null;
   }
 
-  return data;
+  return data as Article;
 }
 
 export default async function HomePage() {
