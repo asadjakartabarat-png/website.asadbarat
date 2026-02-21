@@ -212,6 +212,18 @@ export async function getUserByEmail(email: string): Promise<(User & { password:
   };
 }
 
+export async function createUser(data: { id: string; email: string; password: string; full_name: string; role: string }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `INSERT INTO users (id, email, password, full_name, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    args: [data.id, data.email, data.password, data.full_name, data.role, now, now],
+  });
+}
+
+export async function deleteUser(id: string) {
+  await turso.execute({ sql: `DELETE FROM users WHERE id = ?`, args: [id] });
+}
+
 export async function getUserById(id: string): Promise<User | null> {
   const result = await turso.execute({
     sql: `SELECT * FROM users WHERE id = ?`,
