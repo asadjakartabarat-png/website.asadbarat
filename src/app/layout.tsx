@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import { Toaster } from 'react-hot-toast';
+import { Inter } from 'next/font/google';
 import './globals.css';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
   title: 'Website Berita',
@@ -13,8 +16,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
-      <body>
+    <html lang="id" className={inter.variable}>
+      <body className={inter.className}>
         {children}
         <Toaster position="top-right" />
       </body>
