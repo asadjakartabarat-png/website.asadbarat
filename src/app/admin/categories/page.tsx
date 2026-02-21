@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
-import Link from 'next/link'; from '@/lib/turso/db';
+import Link from 'next/link';
+import { getAllCategories } from '@/lib/turso/db';
 import { formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
