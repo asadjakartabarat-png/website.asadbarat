@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { getDashboardStats } from '@/lib/turso/db';
 import { Card, CardContent } from '@/components/ui/Card';
 import { FileText, Users, FolderOpen, Eye } from 'lucide-react';

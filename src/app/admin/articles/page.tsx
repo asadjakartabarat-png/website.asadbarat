@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { getAllArticlesAdmin } from '@/lib/turso/db';
+export const dynamic = 'force-dynamic';
+import Link from 'next/link'; from '@/lib/turso/db';
 import { formatDateTime } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';

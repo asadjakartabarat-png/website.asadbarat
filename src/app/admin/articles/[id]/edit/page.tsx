@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { notFound } from 'next/navigation';
 import { getArticleById, getAllCategories } from '@/lib/turso/db';
 import ArticleForm from '@/components/admin/ArticleForm';

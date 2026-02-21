@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { getAllCategories } from '@/lib/turso/db';
 import ArticleForm from '@/components/admin/ArticleForm';
 

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { getAllUsers } from '@/lib/turso/db';
 import { formatDate } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
