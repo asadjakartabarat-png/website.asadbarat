@@ -9,10 +9,12 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function POST(request: NextRequest) {
   try {
     const { username, password } = await request.json();
+    console.log('Login attempt:', { username, passwordLength: password?.length });
 
-    const user = await getUserByUsername(username);
+    const user = await getUserByUsername(username?.trim());
+    console.log('User found:', user ? { email: user.email, hasPassword: !!user.password } : null);
 
-    if (!user || user.password !== password) {
+    if (!user || user.password !== password?.trim()) {
       return NextResponse.json({ error: 'Username atau password salah' }, { status: 401 });
     }
 
