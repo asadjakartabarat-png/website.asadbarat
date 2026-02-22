@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
-import { getUserByEmail } from '@/lib/turso/db';
+import { getUserByUsername } from '@/lib/turso/db';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'beritaku-secret-key-change-in-production'
@@ -8,12 +8,12 @@ const JWT_SECRET = new TextEncoder().encode(
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const { username, password } = await request.json();
 
-    const user = await getUserByEmail(email);
+    const user = await getUserByUsername(username);
 
     if (!user || user.password !== password) {
-      return NextResponse.json({ error: 'Email atau password salah' }, { status: 401 });
+      return NextResponse.json({ error: 'Username atau password salah' }, { status: 401 });
     }
 
     const token = await new SignJWT({ id: user.id, email: user.email, role: user.role })
