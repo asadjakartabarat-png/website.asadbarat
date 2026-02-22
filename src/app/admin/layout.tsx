@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -16,12 +16,12 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-const navigation = [
-  { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-  { name: 'Artikel', href: '/admin/articles', icon: FileText },
-  { name: 'Kategori', href: '/admin/categories', icon: FolderOpen },
-  { name: 'Users', href: '/admin/users', icon: Users },
-  { name: 'Media', href: '/admin/media', icon: Image },
+const allNavigation = [
+  { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'editor', 'writer'] },
+  { name: 'Artikel', href: '/admin/articles', icon: FileText, roles: ['super_admin', 'editor', 'writer'] },
+  { name: 'Kategori', href: '/admin/categories', icon: FolderOpen, roles: ['super_admin', 'editor'] },
+  { name: 'Users', href: '/admin/users', icon: Users, roles: ['super_admin'] },
+  { name: 'Media', href: '/admin/media', icon: Image, roles: ['super_admin', 'editor', 'writer'] },
 ];
 
 const pageTitles: Record<string, string> = {
@@ -36,7 +36,14 @@ const pageTitles: Record<string, string> = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string>('writer');
   const pathname = usePathname();
+
+  useEffect(() => {
+    fetch('/api/auth/me').then(r => r.json()).then(d => { if (d.role) setUserRole(d.role); }).catch(() => {});
+  }, []);
+
+  const navigation = allNavigation.filter(item => item.roles.includes(userRole));
 
   if (pathname === '/admin/login') return <>{children}</>;
 
