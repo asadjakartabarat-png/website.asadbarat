@@ -74,6 +74,20 @@ export async function getRelatedArticles(categoryId: string, excludeId: string):
   return result.rows.map(mapArticleRow);
 }
 
+export async function getArticlesByCategorySlug(slug: string, limit = 5): Promise<Article[]> {
+  const result = await turso.execute({
+    sql: `SELECT a.*, c.name as category_name, c.slug as category_slug,
+          u.full_name as author_name
+          FROM articles a
+          LEFT JOIN categories c ON a.category_id = c.id
+          LEFT JOIN users u ON a.author_id = u.id
+          WHERE c.slug = ? AND a.status = 'published'
+          ORDER BY a.published_at DESC LIMIT ?`,
+    args: [slug, limit],
+  });
+  return result.rows.map(mapArticleRow);
+}
+
 export async function getArticlesByCategoryId(categoryId: string): Promise<Article[]> {
   const result = await turso.execute({
     sql: `SELECT a.*, c.name as category_name, c.slug as category_slug,
