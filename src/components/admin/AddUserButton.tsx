@@ -63,12 +63,12 @@ export default function AddUserButton() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
                 <Input
-                  type="email"
+                  type="text"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="email@example.com"
+                  placeholder="Username"
                   required
                 />
               </div>
