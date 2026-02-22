@@ -213,6 +213,16 @@ export async function getAllUsers(): Promise<User[]> {
   return result.rows.map(mapUserRow);
 }
 
+export async function getUserByUsername(username: string): Promise<(User & { password: string }) | null> {
+  const result = await turso.execute({
+    sql: `SELECT * FROM users WHERE username = ? OR email = ?`,
+    args: [username, username],
+  });
+  if (result.rows.length === 0) return null;
+  const row = result.rows[0];
+  return { ...mapUserRow(row), password: row.password as string };
+}
+
 export async function getUserByEmail(email: string): Promise<(User & { password: string }) | null> {
   const result = await turso.execute({
     sql: `SELECT * FROM users WHERE email = ?`,
