@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Search, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -19,6 +19,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,14 +29,14 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b">
+    <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4">
         {/* Top Bar */}
-        <div className="flex items-center justify-between py-4">
-          <Link href="/" className="text-2xl font-bold text-primary-500">
+        <div className="flex items-center justify-between py-3">
+          <Link href="/" className="text-2xl font-black text-red-600 tracking-tight">
             BeritaKu
           </Link>
-          
+
           {/* Desktop Search */}
           <form onSubmit={handleSearch} className="hidden md:flex items-center space-x-2">
             <Input
@@ -43,7 +44,7 @@ export default function Header() {
               placeholder="Cari berita..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-64"
+              className="w-56"
             />
             <Button type="submit" size="sm">
               <Search className="w-4 h-4" />
@@ -61,40 +62,60 @@ export default function Header() {
           </Button>
         </div>
 
-        {/* Navigation */}
-        <nav className={`${isMenuOpen ? 'block' : 'hidden'} md:block pb-4 md:pb-0`}>
-          <ul className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-6">
-            <li>
-              <Link href="/" className="block py-2 text-gray-700 hover:text-primary-500 font-medium">
-                Beranda
-              </Link>
-            </li>
-            {CATEGORIES.map((category) => (
-              <li key={category.slug}>
+        {/* Sub-navigasi kategori - horizontal scrollable */}
+        <nav className="border-t">
+          <div className="overflow-x-auto scrollbar-hide">
+            <ul className="flex items-center gap-0 whitespace-nowrap">
+              <li>
                 <Link
-                  href={`/categories/${category.slug}`}
-                  className="block py-2 text-gray-700 hover:text-primary-500"
+                  href="/"
+                  className={`inline-block px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+                    pathname === '/'
+                      ? 'border-red-600 text-red-600'
+                      : 'border-transparent text-gray-600 hover:text-red-600'
+                  }`}
                 >
-                  {category.name}
+                  Terbaru
                 </Link>
               </li>
-            ))}
-          </ul>
-
-          {/* Mobile Search */}
-          <form onSubmit={handleSearch} className="md:hidden mt-4 flex space-x-2">
-            <Input
-              type="text"
-              placeholder="Cari berita..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="submit" size="sm">
-              <Search className="w-4 h-4" />
-            </Button>
-          </form>
+              {CATEGORIES.map((cat) => {
+                const active = pathname === `/categories/${cat.slug}`;
+                return (
+                  <li key={cat.slug}>
+                    <Link
+                      href={`/categories/${cat.slug}`}
+                      className={`inline-block px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+                        active
+                          ? 'border-red-600 text-red-600'
+                          : 'border-transparent text-gray-600 hover:text-red-600'
+                      }`}
+                    >
+                      {cat.name}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </nav>
+
+        {/* Mobile dropdown */}
+        {isMenuOpen && (
+          <div className="md:hidden pb-4">
+            <form onSubmit={handleSearch} className="flex space-x-2 mt-3">
+              <Input
+                type="text"
+                placeholder="Cari berita..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1"
+              />
+              <Button type="submit" size="sm">
+                <Search className="w-4 h-4" />
+              </Button>
+            </form>
+          </div>
+        )}
       </div>
     </header>
   );
