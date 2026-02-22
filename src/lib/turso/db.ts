@@ -215,8 +215,8 @@ export async function getAllUsers(): Promise<User[]> {
 
 export async function getUserByUsername(username: string): Promise<(User & { password: string }) | null> {
   const result = await turso.execute({
-    sql: `SELECT * FROM users WHERE username = ? OR email = ?`,
-    args: [username, username],
+    sql: `SELECT * FROM users WHERE email = ?`,
+    args: [username],
   });
   if (result.rows.length === 0) return null;
   const row = result.rows[0];
