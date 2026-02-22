@@ -1,15 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-function clearTokenAndRedirect() {
-  const response = NextResponse.redirect('https://asadjakbar.vercel.app/admin/login');
+export async function POST(request: NextRequest) {
+  const url = new URL('/admin/login', request.url);
+  const response = NextResponse.redirect(url, { status: 303 });
   response.cookies.set('admin_token', '', { maxAge: 0, path: '/' });
   return response;
 }
 
-export async function POST() {
-  return clearTokenAndRedirect();
-}
-
-export async function GET() {
-  return clearTokenAndRedirect();
+export async function GET(request: NextRequest) {
+  const url = new URL('/admin/login', request.url);
+  const response = NextResponse.redirect(url, { status: 303 });
+  response.cookies.set('admin_token', '', { maxAge: 0, path: '/' });
+  return response;
 }
