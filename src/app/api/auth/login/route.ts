@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username atau password salah' }, { status: 401 });
     }
 
-    const token = await new SignJWT({ id: user.id, email: user.email, role: user.role })
+    const token = await new SignJWT({ id: user.id, email: user.email, role: user.role, full_name: user.full_name })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('7d')
       .sign(JWT_SECRET);
