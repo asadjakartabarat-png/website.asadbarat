@@ -14,6 +14,7 @@ import {
   X,
   ExternalLink,
   ChevronRight,
+  MessageSquare,
 } from 'lucide-react';
 
 const allNavigation = [
@@ -22,6 +23,7 @@ const allNavigation = [
   { name: 'Kategori', href: '/admin/categories', icon: FolderOpen, roles: ['super_admin', 'editor'] },
   { name: 'Users', href: '/admin/users', icon: Users, roles: ['super_admin'] },
   { name: 'Media', href: '/admin/media', icon: Image, roles: ['super_admin', 'editor', 'writer'] },
+  { name: 'Pesan', href: '/admin/messages', icon: MessageSquare, roles: ['super_admin', 'editor'] },
 ];
 
 const pageTitles: Record<string, string> = {
@@ -31,7 +33,7 @@ const pageTitles: Record<string, string> = {
   '/admin/categories': 'Kategori',
   '/admin/categories/new': 'Tambah Kategori',
   '/admin/users': 'Users',
-  '/admin/media': 'Media',
+  '/admin/messages': 'Pesan Masuk',
 };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

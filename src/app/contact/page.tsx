@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Header from '@/components/public/Header';
 import Footer from '@/components/public/Footer';
+import ContactForm from '@/components/public/ContactForm';
 
 export const metadata: Metadata = {
-  title: 'Kontak - BeritaKu',
-  description: 'Hubungi tim redaksi BeritaKu.',
+  title: 'Kontak - Asad Jakbar',
+  description: 'Hubungi tim redaksi Asad Jakbar.',
 };
 
 export default function ContactPage() {
@@ -21,11 +22,7 @@ export default function ContactPage() {
           <div className="space-y-4">
             <div>
               <h2 className="font-semibold text-gray-900">Email Redaksi</h2>
-              <p className="text-gray-600">redaksi@beritaku.com</p>
-            </div>
-            <div>
-              <h2 className="font-semibold text-gray-900">Email Iklan & Kerjasama</h2>
-              <p className="text-gray-600">iklan@beritaku.com</p>
+              <p className="text-gray-600">redaksi@asadjakbar.com</p>
             </div>
             <div>
               <h2 className="font-semibold text-gray-900">Telepon</h2>
@@ -36,42 +33,7 @@ export default function ContactPage() {
               <p className="text-gray-600">Jakarta Barat, DKI Jakarta, Indonesia</p>
             </div>
           </div>
-
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h2 className="font-semibold text-gray-900 mb-4">Kirim Pesan</h2>
-            <form className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nama</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="Nama lengkap"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="email@contoh.com"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Pesan</label>
-                <textarea
-                  rows={4}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="Tulis pesan Anda..."
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full bg-red-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
-              >
-                Kirim Pesan
-              </button>
-            </form>
-          </div>
+          <ContactForm />
         </div>
       </main>
       <Footer />

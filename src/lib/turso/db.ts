@@ -257,6 +257,44 @@ export async function getUserById(id: string): Promise<User | null> {
   return mapUserRow(result.rows[0]);
 }
 
+// ─── MESSAGES ─────────────────────────────────────────────────────────────────
+
+export async function createMessage(data: { id: string; name: string; email: string; message: string }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `INSERT INTO messages (id, name, email, message, is_read, created_at) VALUES (?, ?, ?, ?, 0, ?)`,
+    args: [data.id, data.name, data.email, data.message, now],
+  });
+}
+
+export async function getAllMessages() {
+  const result = await turso.execute({
+    sql: `SELECT * FROM messages ORDER BY created_at DESC`,
+    args: [],
+  });
+  return result.rows.map(r => ({
+    id: r.id as string,
+    name: r.name as string,
+    email: r.email as string,
+    message: r.message as string,
+    is_read: Boolean(r.is_read),
+    created_at: r.created_at as string,
+  }));
+}
+
+export async function markMessageRead(id: string) {
+  await turso.execute({ sql: `UPDATE messages SET is_read = 1 WHERE id = ?`, args: [id] });
+}
+
+export async function deleteMessage(id: string) {
+  await turso.execute({ sql: `DELETE FROM messages WHERE id = ?`, args: [id] });
+}
+
+export async function getUnreadMessageCount(): Promise<number> {
+  const result = await turso.execute({ sql: `SELECT COUNT(*) as count FROM messages WHERE is_read = 0`, args: [] });
+  return Number(result.rows[0].count);
+}
+
 // ─── STATS ───────────────────────────────────────────────────────────────────
 
 export async function getDashboardStats() {
