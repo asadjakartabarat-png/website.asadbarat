@@ -11,7 +11,7 @@ export async function GET() {
     { headers: { Authorization: auth } }
   );
   const data = await res.json();
-  if (!res.ok) return NextResponse.json({ error: data.error?.message }, { status: 400 });
+  if (!res.ok) return NextResponse.json({ error: data.error?.message, detail: data }, { status: 400 });
   return NextResponse.json(data.resources ?? []);
 }
 
