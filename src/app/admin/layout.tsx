@@ -36,7 +36,7 @@ const pageTitles: Record<string, string> = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userRole, setUserRole] = useState<string>('writer');
+  const [userRole, setUserRole] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
   const pathname = usePathname();
 
