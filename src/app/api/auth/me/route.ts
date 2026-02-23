@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    return NextResponse.json({ id: payload.id, email: payload.email, role: payload.role });
+    return NextResponse.json({ id: payload.id, email: payload.email, role: payload.role, full_name: payload.full_name });
   } catch {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   }
