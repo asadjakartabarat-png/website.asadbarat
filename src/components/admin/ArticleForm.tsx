@@ -37,8 +37,28 @@ interface ArticleFormProps {
 
 export default function ArticleForm({ categories, article }: ArticleFormProps) {
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [slug, setSlug] = useState(article?.slug || '');
   const router = useRouter();
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setValue('featured_image', data.url);
+      toast.success('Gambar berhasil diupload!');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Upload gagal');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ArticleFormData>({
     resolver: zodResolver(articleSchema),
@@ -169,8 +189,15 @@ export default function ArticleForm({ categories, article }: ArticleFormProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Featured Image URL</label>
-                <Input {...register('featured_image')} placeholder="https://example.com/image.jpg" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Featured Image</label>
+                <Input {...register('featured_image')} placeholder="https://example.com/image.jpg" className="mb-2" />
+                <label className={`w-full flex items-center justify-center px-3 py-2 border border-dashed border-gray-300 rounded-md cursor-pointer text-sm text-gray-500 hover:border-red-400 hover:text-red-500 transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+                  {uploading ? 'Mengupload...' : '📁 Upload dari komputer'}
+                </label>
+                {watch('featured_image') && (
+                  <img src={watch('featured_image')} alt="preview" className="mt-2 w-full h-32 object-cover rounded-md" />
+                )}
               </div>
 
               <div className="flex space-x-2">
