@@ -37,10 +37,14 @@ const pageTitles: Record<string, string> = {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string>('writer');
+  const [userName, setUserName] = useState<string>('');
   const pathname = usePathname();
 
   useEffect(() => {
-    fetch('/api/auth/me').then(r => r.json()).then(d => { if (d.role) setUserRole(d.role); }).catch(() => {});
+    fetch('/api/auth/me').then(r => r.json()).then(d => {
+      if (d.role) setUserRole(d.role);
+      if (d.full_name) setUserName(d.full_name);
+    }).catch(() => {});
   }, []);
 
   const navigation = allNavigation.filter(item => item.roles.includes(userRole));
@@ -101,11 +105,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-4 border-t border-red-900">
           <div className="flex items-center px-2 mb-3">
             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-semibold text-sm">A</span>
+              <span className="text-white font-semibold text-sm">{userName.charAt(0).toUpperCase()}</span>
             </div>
             <div className="ml-3 min-w-0">
-              <p className="text-white text-sm font-medium truncate">Admin Asad Jakbar</p>
-              <p className="text-red-300 text-xs">Super Admin</p>
+              <p className="text-white text-sm font-medium truncate">{userName}</p>
+              <p className="text-red-300 text-xs capitalize">{userRole.replace('_', ' ')}</p>
             </div>
           </div>
           <form action="/api/auth/logout" method="POST">
@@ -147,11 +151,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </Link>
               <div className="flex items-center space-x-2 pl-3 border-l border-gray-200">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold" style={{ backgroundColor: '#991b1b' }}>
-                  A
+                  {userName.charAt(0).toUpperCase()}
                 </div>
                 <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-gray-800">Admin</p>
-                  <p className="text-xs text-gray-400">Super Admin</p>
+                  <p className="text-sm font-medium text-gray-800">{userName}</p>
+                  <p className="text-xs text-gray-400 capitalize">{userRole.replace('_', ' ')}</p>
                 </div>
               </div>
             </div>
