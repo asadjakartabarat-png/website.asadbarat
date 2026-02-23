@@ -48,10 +48,15 @@ export default function ArticleForm({ categories, article }: ArticleFormProps) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
+      formData.append('folder', 'asadjakbar');
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: 'POST', body: formData }
+      );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setValue('featured_image', data.url);
+      if (!res.ok) throw new Error(data.error?.message || 'Upload gagal');
+      setValue('featured_image', data.secure_url);
       toast.success('Gambar berhasil diupload!');
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'Upload gagal');
