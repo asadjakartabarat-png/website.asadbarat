@@ -8,7 +8,7 @@ export default function Footer() {
           <div>
             <h3 className="text-xl font-bold text-primary-500 mb-4">Portal Kegiatan Persinas Asad Kota Jakarta Barat</h3>
             <p className="text-gray-300">
-              Portal kegiatan seputar Persinas Asad Kota Jakarta Barat terkini
+              Portal berita kegiatan persinas asad kota jakarta barat terkini
             </p>
           </div>
           
