@@ -295,6 +295,37 @@ export async function getUnreadMessageCount(): Promise<number> {
   return Number(result.rows[0].count);
 }
 
+// ─── SUBSCRIBERS ─────────────────────────────────────────────────────────────
+
+export async function createSubscriber(data: { id: string; email: string }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `INSERT INTO subscribers (id, email, created_at) VALUES (?, ?, ?)`,
+    args: [data.id, data.email, now],
+  });
+}
+
+export async function getAllSubscribers() {
+  const result = await turso.execute({
+    sql: `SELECT * FROM subscribers ORDER BY created_at DESC`,
+    args: [],
+  });
+  return result.rows.map(r => ({
+    id: r.id as string,
+    email: r.email as string,
+    created_at: r.created_at as string,
+  }));
+}
+
+export async function deleteSubscriber(id: string) {
+  await turso.execute({ sql: `DELETE FROM subscribers WHERE id = ?`, args: [id] });
+}
+
+export async function getSubscriberCount(): Promise<number> {
+  const result = await turso.execute({ sql: `SELECT COUNT(*) as count FROM subscribers`, args: [] });
+  return Number(result.rows[0].count);
+}
+
 // ─── STATS ───────────────────────────────────────────────────────────────────
 
 export async function getDashboardStats() {
