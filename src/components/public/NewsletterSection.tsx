@@ -1,14 +1,33 @@
 'use client';
 
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 export default function NewsletterSection() {
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) setSubmitted(true);
+    setLoading(true);
+    try {
+      const res = await fetch('/api/subscribers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Gagal subscribe');
+        return;
+      }
+      setSubmitted(true);
+    } catch {
+      toast.error('Terjadi kesalahan');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -30,9 +49,10 @@ export default function NewsletterSection() {
             />
             <button
               type="submit"
-              className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-md text-sm transition-colors"
+              disabled={loading}
+              className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-md text-sm transition-colors disabled:opacity-60"
             >
-              Subscribe
+              {loading ? 'Memproses...' : 'Subscribe'}
             </button>
           </form>
         )}
