@@ -31,6 +31,10 @@ export default function LoginPage() {
       }
 
       toast.success('Login berhasil!');
+      if (data.user) {
+        localStorage.setItem('admin_role', data.user.role);
+        localStorage.setItem('admin_name', data.user.full_name);
+      }
       router.push('/admin/dashboard');
       router.refresh();
     } catch {
