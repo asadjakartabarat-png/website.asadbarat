@@ -6,8 +6,11 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'Website Berita',
+  title: 'Asad Jakarta Barat',
   description: 'Portal berita terkini dan terpercaya',
+  icons: {
+    icon: '/images/logo.ico',
+  },
 };
 
 export default function RootLayout({
