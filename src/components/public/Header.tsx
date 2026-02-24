@@ -34,7 +34,7 @@ export default function Header() {
         {/* Top Bar */}
         <div className="flex items-center justify-between py-3">
           <Link href="/" className="text-2xl font-black text-red-600 tracking-tight">
-            BeritaKu
+            Persinas Asad Jakarta Barat
           </Link>
 
           {/* Desktop Search */}
