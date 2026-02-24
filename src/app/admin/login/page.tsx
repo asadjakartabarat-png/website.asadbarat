@@ -35,8 +35,7 @@ export default function LoginPage() {
         localStorage.setItem('admin_role', data.user.role);
         localStorage.setItem('admin_name', data.user.full_name);
       }
-      router.push('/admin/dashboard');
-      router.refresh();
+      window.location.href = '/admin/dashboard';
     } catch {
       toast.error('Terjadi kesalahan');
     } finally {
