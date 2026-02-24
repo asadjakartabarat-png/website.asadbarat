@@ -79,3 +79,24 @@ INSERT OR IGNORE INTO categories (id, name, slug, description, created_at) VALUE
 -- ============================================================
 -- SELECT * FROM users;
 -- SELECT * FROM categories;
+
+-- ============================================================
+-- TABEL MESSAGES (jalankan jika belum ada)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS messages (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  message TEXT NOT NULL,
+  is_read INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+
+-- ============================================================
+-- TABEL SUBSCRIBERS (jalankan jika belum ada)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS subscribers (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  created_at TEXT NOT NULL
+);
