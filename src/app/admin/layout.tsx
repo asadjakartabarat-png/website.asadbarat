@@ -79,7 +79,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex items-center justify-between h-16 px-6 border-b border-red-900">
           <Link href="/admin/dashboard" className="flex items-center space-x-2">
             <img src="/images/logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain" />
-            <span className="text-white font-bold text-lg">Admin Asad</span>
+            <span className="text-white font-bold text-lg">Admin Persinas Asad</span>
           </Link>
           <button className="lg:hidden text-white/70 hover:text-white" onClick={() => setSidebarOpen(false)}>
             <X className="w-5 h-5" />
