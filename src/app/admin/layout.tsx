@@ -38,15 +38,16 @@ const pageTitles: Record<string, string> = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userRole, setUserRole] = useState<string>(() =>
-    typeof window !== 'undefined' ? localStorage.getItem('admin_role') || '' : ''
-  );
-  const [userName, setUserName] = useState<string>(() =>
-    typeof window !== 'undefined' ? localStorage.getItem('admin_name') || '' : ''
-  );
+  const [userRole, setUserRole] = useState<string>('');
+  const [userName, setUserName] = useState<string>('');
   const pathname = usePathname();
 
   useEffect(() => {
+    const cachedRole = localStorage.getItem('admin_role');
+    const cachedName = localStorage.getItem('admin_name');
+    if (cachedRole) setUserRole(cachedRole);
+    if (cachedName) setUserName(cachedName);
+
     fetch('/api/auth/me').then(r => r.json()).then(d => {
       if (d.role) { setUserRole(d.role); localStorage.setItem('admin_role', d.role); }
       if (d.full_name) { setUserName(d.full_name); localStorage.setItem('admin_name', d.full_name); }
