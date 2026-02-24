@@ -6,9 +6,9 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-xl font-bold text-primary-500 mb-4">BeritaKu</h3>
+            <h3 className="text-xl font-bold text-primary-500 mb-4">Portal Kegiatan Persinas Asad Kota Jakarta Barat</h3>
             <p className="text-gray-300">
-              Portal berita terkini dan terpercaya untuk memberikan informasi akurat kepada masyarakat.
+              Portal kegiatan seputar Persinas Asad Kota Jakarta Barat terkini
             </p>
           </div>
           
@@ -34,15 +34,15 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Kontak</h4>
             <div className="text-gray-300 space-y-2">
-              <p>Email: info@beritaku.com</p>
-              <p>Telepon: (021) 123-4567</p>
-              <p>Alamat: Jakarta, Indonesia</p>
+              <p>Email: asad.jakartabarat@gmail.com</p>
+              <p>Telepon: +62 897-9157-353</p>
+              <p>Alamat: Jl. Fajar Baru III No.11 2, RT.2/RW.8, Cengkareng Tim., Kecamatan Cengkareng, Kota Jakarta Barat, DKI Jakarta 11730</p>
             </div>
           </div>
         </div>
         
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
-          <p>&copy; 2024 BeritaKu. Semua hak cipta dilindungi.</p>
+          <p>&copy; 2025 Persinas Asad Jakarta Barat. Semua hak cipta dilindungi.</p>
         </div>
       </div>
     </footer>
