@@ -38,14 +38,18 @@ const pageTitles: Record<string, string> = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userRole, setUserRole] = useState<string>('');
-  const [userName, setUserName] = useState<string>('');
+  const [userRole, setUserRole] = useState<string>(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('admin_role') || '' : ''
+  );
+  const [userName, setUserName] = useState<string>(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('admin_name') || '' : ''
+  );
   const pathname = usePathname();
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.json()).then(d => {
-      if (d.role) setUserRole(d.role);
-      if (d.full_name) setUserName(d.full_name);
+      if (d.role) { setUserRole(d.role); localStorage.setItem('admin_role', d.role); }
+      if (d.full_name) { setUserName(d.full_name); localStorage.setItem('admin_name', d.full_name); }
     }).catch(() => {});
   }, []);
 
@@ -114,15 +118,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <p className="text-red-300 text-xs capitalize">{userRole.replace('_', ' ')}</p>
             </div>
           </div>
-          <form action="/api/auth/logout" method="POST">
-            <button
-              type="submit"
-              className="w-full flex items-center px-4 py-2.5 rounded-xl text-sm font-medium text-red-200 hover:bg-white/10 hover:text-white transition-all duration-150"
-            >
-              <LogOut className="w-4 h-4 mr-3" />
-              Logout
-            </button>
-          </form>
+          <button
+            onClick={async () => {
+              await fetch('/api/auth/logout', { method: 'POST' });
+              localStorage.removeItem('admin_role');
+              localStorage.removeItem('admin_name');
+              window.location.href = '/admin/login';
+            }}
+            className="w-full flex items-center px-4 py-2.5 rounded-xl text-sm font-medium text-red-200 hover:bg-white/10 hover:text-white transition-all duration-150"
+          >
+            <LogOut className="w-4 h-4 mr-3" />
+            Logout
+          </button>
         </div>
       </aside>
 
