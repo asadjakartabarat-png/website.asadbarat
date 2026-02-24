@@ -6,8 +6,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'Asad Jakarta Barat',
-  description: 'Portal berita terkini dan terpercaya',
+  title: 'Persinas Asad Jakarta Barat',
+  description: 'Website Persinas Asad Jakarta Barat',
   icons: {
     icon: '/images/logo.ico',
   },
