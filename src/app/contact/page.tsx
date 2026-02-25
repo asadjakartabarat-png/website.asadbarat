@@ -22,15 +22,15 @@ export default function ContactPage() {
           <div className="space-y-4">
             <div>
               <h2 className="font-semibold text-gray-900">Email Redaksi</h2>
-              <p className="text-gray-600">redaksi@asadjakbar.com</p>
+              <p className="text-gray-600">asad.jakartabarat@gmail.com</p>
             </div>
             <div>
               <h2 className="font-semibold text-gray-900">Telepon</h2>
-              <p className="text-gray-600">(021) 123-4567</p>
+              <p className="text-gray-600">+62 897-9157-353</p>
             </div>
             <div>
               <h2 className="font-semibold text-gray-900">Alamat</h2>
-              <p className="text-gray-600">Jakarta Barat, DKI Jakarta, Indonesia</p>
+              <p className="text-gray-600">Jl. Fajar Baru III No.11 2, RT.2/RW.8, Cengkareng Tim., Kecamatan Cengkareng, Kota Jakarta Barat, DKI Jakarta 11730</p>
             </div>
           </div>
           <ContactForm />
