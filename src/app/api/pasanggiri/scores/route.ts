@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Nilai sudah diinput untuk juri ini' }, { status: 400 });
     }
 
-    const score = await createPasanggiriScore({
+    const score: any = await createPasanggiriScore({
       competition_id: Number(competition_id),
       juri_name,
       criteria_scores,
