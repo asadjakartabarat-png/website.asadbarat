@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     if (competition_id) filters.competition_id = Number(competition_id);
     if (juri_name) filters.juri_name = juri_name;
     const scores = await getPasanggiriScores(filters);
-    return NextResponse.json(scores.map(s => ({
+    return NextResponse.json(scores.map((s: any) => ({
       ...s,
       id: String(Number(s.id)),
       competition_id: String(Number(s.competition_id)),
