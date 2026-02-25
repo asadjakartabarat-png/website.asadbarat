@@ -9,6 +9,12 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Proteksi route absensi
+  if (pathname.startsWith('/absensi') && pathname !== '/absensi/login') {
+    const session = req.cookies.get('absensi_session')?.value;
+    if (!session) return NextResponse.redirect(new URL('/absensi/login', req.url));
+  }
+
   if (!pathname.startsWith('/admin')) return NextResponse.next();
 
   if (pathname === '/admin/login') {
@@ -36,5 +42,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/admin/:path*', '/absensi/:path*'],
 };

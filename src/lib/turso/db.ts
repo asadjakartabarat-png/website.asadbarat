@@ -343,6 +343,187 @@ export async function getDashboardStats() {
   };
 }
 
+// ─── ABSENSI USERS ──────────────────────────────────────────────────────────
+
+export async function getAbsensiUserByUsername(username: string) {
+  const result = await turso.execute({ sql: `SELECT * FROM absensi_users WHERE username = ? AND is_active = 1`, args: [username] });
+  if (result.rows.length === 0) return null;
+  return result.rows[0];
+}
+
+export async function getAllAbsensiUsers() {
+  const result = await turso.execute({ sql: `SELECT au.*, ad.nama_desa FROM absensi_users au LEFT JOIN absensi_desa ad ON au.desa_id = ad.id ORDER BY au.created_at DESC`, args: [] });
+  return result.rows;
+}
+
+export async function createAbsensiUser(data: { username: string; password: string; full_name: string; role: string; desa_id?: number | null }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `INSERT INTO absensi_users (username, password, full_name, role, desa_id, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
+    args: [data.username, data.password, data.full_name, data.role, data.desa_id ?? null, now, now],
+  });
+}
+
+export async function updateAbsensiUser(id: number, data: { username?: string; password?: string; full_name?: string; role?: string; desa_id?: number | null; is_active?: number }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `UPDATE absensi_users SET username=?, full_name=?, role=?, desa_id=?, is_active=?, updated_at=? WHERE id=?`,
+    args: [data.username!, data.full_name!, data.role!, data.desa_id ?? null, data.is_active ?? 1, now, id],
+  });
+}
+
+export async function deleteAbsensiUser(id: number) {
+  await turso.execute({ sql: `DELETE FROM absensi_users WHERE id = ?`, args: [id] });
+}
+
+// ─── ABSENSI DESA ────────────────────────────────────────────────────────────
+
+export async function getAllDesa() {
+  const result = await turso.execute({ sql: `SELECT * FROM absensi_desa ORDER BY nama_desa`, args: [] });
+  return result.rows;
+}
+
+export async function createDesa(nama_desa: string) {
+  const now = new Date().toISOString();
+  await turso.execute({ sql: `INSERT INTO absensi_desa (nama_desa, created_at) VALUES (?, ?)`, args: [nama_desa, now] });
+}
+
+export async function updateDesa(id: number, nama_desa: string) {
+  await turso.execute({ sql: `UPDATE absensi_desa SET nama_desa = ? WHERE id = ?`, args: [nama_desa, id] });
+}
+
+export async function deleteDesa(id: number) {
+  await turso.execute({ sql: `DELETE FROM absensi_desa WHERE id = ?`, args: [id] });
+}
+
+// ─── ABSENSI KELOMPOK ────────────────────────────────────────────────────────
+
+export async function getAllKelompok(desaId?: number) {
+  if (desaId) {
+    const result = await turso.execute({ sql: `SELECT ak.*, ad.nama_desa FROM absensi_kelompok ak JOIN absensi_desa ad ON ak.desa_id = ad.id WHERE ak.desa_id = ? ORDER BY ak.nama_kelompok`, args: [desaId] });
+    return result.rows;
+  }
+  const result = await turso.execute({ sql: `SELECT ak.*, ad.nama_desa FROM absensi_kelompok ak JOIN absensi_desa ad ON ak.desa_id = ad.id ORDER BY ad.nama_desa, ak.nama_kelompok`, args: [] });
+  return result.rows;
+}
+
+export async function createKelompok(data: { desa_id: number; nama_kelompok: string; target_putra: number; target_putri: number }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `INSERT INTO absensi_kelompok (desa_id, nama_kelompok, target_putra, target_putri, created_at) VALUES (?, ?, ?, ?, ?)`,
+    args: [data.desa_id, data.nama_kelompok, data.target_putra, data.target_putri, now],
+  });
+}
+
+export async function updateKelompok(id: number, data: { nama_kelompok?: string; target_putra?: number; target_putri?: number }) {
+  await turso.execute({
+    sql: `UPDATE absensi_kelompok SET nama_kelompok=?, target_putra=?, target_putri=? WHERE id=?`,
+    args: [data.nama_kelompok!, data.target_putra!, data.target_putri!, id],
+  });
+}
+
+export async function deleteKelompok(id: number) {
+  await turso.execute({ sql: `DELETE FROM absensi_kelompok WHERE id = ?`, args: [id] });
+}
+
+// ─── ABSENSI DATA ────────────────────────────────────────────────────────────
+
+export async function getAbsensiData(bulan: number, tahun: number, desaId?: number) {
+  if (desaId) {
+    const result = await turso.execute({
+      sql: `SELECT ad.*, ak.nama_kelompok, ak.target_putra, ak.target_putri, ades.nama_desa
+            FROM absensi_data ad
+            JOIN absensi_kelompok ak ON ad.kelompok_id = ak.id
+            JOIN absensi_desa ades ON ak.desa_id = ades.id
+            WHERE ad.bulan = ? AND ad.tahun = ? AND ak.desa_id = ?`,
+      args: [bulan, tahun, desaId],
+    });
+    return result.rows;
+  }
+  const result = await turso.execute({
+    sql: `SELECT ad.*, ak.nama_kelompok, ak.target_putra, ak.target_putri, ades.nama_desa
+          FROM absensi_data ad
+          JOIN absensi_kelompok ak ON ad.kelompok_id = ak.id
+          JOIN absensi_desa ades ON ak.desa_id = ades.id
+          WHERE ad.bulan = ? AND ad.tahun = ?`,
+    args: [bulan, tahun],
+  });
+  return result.rows;
+}
+
+export async function upsertAbsensiData(data: { kelompok_id: number; bulan: number; tahun: number; hadir_putra: number; hadir_putri: number; input_by: number }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `INSERT INTO absensi_data (kelompok_id, bulan, tahun, hadir_putra, hadir_putri, input_by, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(kelompok_id, bulan, tahun) DO UPDATE SET hadir_putra=excluded.hadir_putra, hadir_putri=excluded.hadir_putri, input_by=excluded.input_by, updated_at=excluded.updated_at`,
+    args: [data.kelompok_id, data.bulan, data.tahun, data.hadir_putra, data.hadir_putri, data.input_by, now, now],
+  });
+}
+
+// ─── ABSENSI LAPORAN ─────────────────────────────────────────────────────────
+
+export async function getLaporanPerDesa(bulan: number, tahun: number) {
+  const result = await turso.execute({
+    sql: `SELECT ades.nama_desa,
+            COUNT(ak.id) as total_kelompok,
+            SUM(ak.target_putra) as total_target_putra,
+            COALESCE(SUM(ad.hadir_putra), 0) as total_hadir_putra,
+            SUM(ak.target_putri) as total_target_putri,
+            COALESCE(SUM(ad.hadir_putri), 0) as total_hadir_putri
+          FROM absensi_desa ades
+          JOIN absensi_kelompok ak ON ak.desa_id = ades.id
+          LEFT JOIN absensi_data ad ON ad.kelompok_id = ak.id AND ad.bulan = ? AND ad.tahun = ?
+          GROUP BY ades.id, ades.nama_desa
+          ORDER BY ades.nama_desa`,
+    args: [bulan, tahun],
+  });
+  return result.rows;
+}
+
+export async function getLaporanDetailDesa(desaName: string, bulan: number, tahun: number) {
+  const result = await turso.execute({
+    sql: `SELECT ak.nama_kelompok,
+            ak.target_putra, ak.target_putri,
+            COALESCE(ad.hadir_putra, 0) as hadir_putra,
+            COALESCE(ad.hadir_putri, 0) as hadir_putri
+          FROM absensi_kelompok ak
+          JOIN absensi_desa ades ON ak.desa_id = ades.id
+          LEFT JOIN absensi_data ad ON ad.kelompok_id = ak.id AND ad.bulan = ? AND ad.tahun = ?
+          WHERE ades.nama_desa = ?
+          ORDER BY ak.nama_kelompok`,
+    args: [bulan, tahun, desaName],
+  });
+  return result.rows;
+}
+
+export async function getLaporanDKI(tahun: number) {
+  const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const result = await turso.execute({
+    sql: `SELECT ad.bulan,
+            SUM(ak.target_putra) as total_target_putra,
+            SUM(ad.hadir_putra) as total_hadir_putra,
+            SUM(ak.target_putri) as total_target_putri,
+            SUM(ad.hadir_putri) as total_hadir_putri
+          FROM absensi_data ad
+          JOIN absensi_kelompok ak ON ad.kelompok_id = ak.id
+          WHERE ad.tahun = ?
+          GROUP BY ad.bulan
+          ORDER BY ad.bulan`,
+    args: [tahun],
+  });
+  return result.rows.map(r => ({
+    bulan: Number(r.bulan),
+    nama_bulan: BULAN[Number(r.bulan) - 1],
+    total_target_putra: Number(r.total_target_putra),
+    total_hadir_putra: Number(r.total_hadir_putra),
+    total_target_putri: Number(r.total_target_putri),
+    total_hadir_putri: Number(r.total_hadir_putri),
+    persentase_putra: Number(r.total_target_putra) > 0 ? Math.round((Number(r.total_hadir_putra) / Number(r.total_target_putra)) * 1000) / 10 : 0,
+    persentase_putri: Number(r.total_target_putri) > 0 ? Math.round((Number(r.total_hadir_putri) / Number(r.total_target_putri)) * 1000) / 10 : 0,
+  }));
+}
+
 // ─── MAPPERS ─────────────────────────────────────────────────────────────────
 
 function mapArticleRow(row: any): Article {
