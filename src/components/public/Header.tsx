@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Search, Menu, X } from 'lucide-react';
@@ -33,7 +34,8 @@ export default function Header() {
       <div className="container mx-auto px-4">
         {/* Top Bar */}
         <div className="flex items-center justify-between py-3">
-          <Link href="/" className="text-2xl font-black text-red-600 tracking-tight">
+          <Link href="/" className="flex items-center gap-2 text-2xl font-black text-red-600 tracking-tight">
+            <Image src="/images/logo.png" alt="Logo PERSINAS ASAD" width={40} height={40} className="object-contain" />
             Persinas Asad Jakarta Barat
           </Link>
 
