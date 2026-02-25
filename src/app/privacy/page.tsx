@@ -72,7 +72,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold mb-2">7. Hubungi Kami</h2>
             <p>
               Jika Anda memiliki pertanyaan mengenai kebijakan privasi ini, silakan hubungi kami di{' '}
-              <a href="mailto:redaksi@beritaku.com" className="text-red-600 hover:underline">
+              <a href="mailto:asad.jakartabarat@gmail.com" className="text-red-600 hover:underline">
                 redaksi@beritaku.com
               </a>
               .
