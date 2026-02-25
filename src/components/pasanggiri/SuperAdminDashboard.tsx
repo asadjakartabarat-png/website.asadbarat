@@ -27,12 +27,14 @@ export default function SuperAdminDashboard({ user, activeTab = 'users' }: Props
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editForm, setEditForm] = useState({ username: '', role: '', password: '' });
   const [newUser, setNewUser] = useState({ username: '', password: '', role: 'JURI_PUTRA' });
+  const [newDesaName, setNewDesaName] = useState('');
 
   useEffect(() => {
     fetchUsers(); fetchLogs(); fetchCompetitions();
-    fetch('/api/pasanggiri/desa').then(r => r.json()).then(setDesaList).catch(console.error);
+    fetchDesa();
   }, []);
 
+  const fetchDesa = () => fetch('/api/pasanggiri/desa').then(r => r.json()).then(setDesaList).catch(console.error);
   const fetchUsers = () => fetch('/api/pasanggiri/users').then(r => r.json()).then(setUsers).catch(console.error);
   const fetchLogs = () => fetch('/api/pasanggiri/activity-logs?limit=100').then(r => r.json()).then(setLogs).catch(console.error);
   const fetchCompetitions = () => fetch('/api/pasanggiri/competitions').then(r => r.json()).then(setCompetitions).catch(console.error);
@@ -129,6 +131,24 @@ export default function SuperAdminDashboard({ user, activeTab = 'users' }: Props
     try {
       const res = await fetch(`/api/pasanggiri/competitions?id=${id}`, { method: 'DELETE' });
       if (res.ok) { setCompetitions(competitions.filter(c => c.id !== id)); await logActivity('DELETE_COMPETITION', `Menghapus sesi: ${name}`); }
+    } catch (error) { console.error(error); }
+  };
+
+  const addDesa = async () => {
+    const nama = newDesaName.trim();
+    if (!nama) return;
+    try {
+      const res = await fetch('/api/pasanggiri/desa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nama_desa: nama }) });
+      if (res.ok) { setNewDesaName(''); fetchDesa(); }
+      else { const err = await res.json(); alert(err.error || 'Gagal menambah desa'); }
+    } catch (error) { console.error(error); }
+  };
+
+  const deleteDesa = async (id: number, nama: string) => {
+    if (!confirm(`Hapus desa "${nama}"?`)) return;
+    try {
+      const res = await fetch(`/api/pasanggiri/desa?id=${id}`, { method: 'DELETE' });
+      if (res.ok) fetchDesa();
     } catch (error) { console.error(error); }
   };
 
@@ -365,10 +385,26 @@ export default function SuperAdminDashboard({ user, activeTab = 'users' }: Props
             </div>
             <div className="card">
               <h3 className="text-lg font-medium mb-4">Manajemen Desa</h3>
+              <div className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  placeholder="Nama desa baru..."
+                  value={newDesaName}
+                  onChange={e => setNewDesaName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && newDesaName.trim() && addDesa()}
+                  className="border rounded px-3 py-2 flex-1 text-sm"
+                />
+                <button
+                  onClick={addDesa}
+                  disabled={!newDesaName.trim()}
+                  className="bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 disabled:opacity-50"
+                >Tambah</button>
+              </div>
               <div className="space-y-2">
                 {desaList.map(d => (
                   <div key={d.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                     <span className="text-gray-900">{d.nama_desa}</span>
+                    <button onClick={() => deleteDesa(d.id, d.nama_desa)} className="text-red-600 hover:text-red-800 text-xs">Hapus</button>
                   </div>
                 ))}
               </div>
