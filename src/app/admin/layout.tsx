@@ -111,6 +111,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* User + Logout */}
         <div className="p-4 border-t border-red-900">
+          {userRole === 'super_admin' && (
+            <div className="mb-3 space-y-1">
+              <p className="text-xs text-red-400 font-semibold uppercase px-1 mb-1">Akses Cepat</p>
+              <a href="/pasanggiri/dashboard" className="flex items-center px-3 py-2 rounded-xl text-sm font-medium text-red-200 hover:bg-white/10 hover:text-white transition-all">
+                <span className="mr-3">🥋</span>Dashboard Pasanggiri
+              </a>
+              <a href="/absensi/dashboard" className="flex items-center px-3 py-2 rounded-xl text-sm font-medium text-red-200 hover:bg-white/10 hover:text-white transition-all">
+                <span className="mr-3">📅</span>Dashboard Absensi
+              </a>
+            </div>
+          )}
           <div className="flex items-center px-2 mb-3">
             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
               <span className="text-white font-semibold text-sm">{userName.charAt(0).toUpperCase()}</span>
