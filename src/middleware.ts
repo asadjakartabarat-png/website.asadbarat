@@ -9,6 +9,12 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Proteksi route pasanggiri
+  if (pathname.startsWith('/pasanggiri') && pathname !== '/pasanggiri/login') {
+    const session = req.cookies.get('pasanggiri_session')?.value;
+    if (!session) return NextResponse.redirect(new URL('/pasanggiri/login', req.url));
+  }
+
   // Proteksi route absensi
   if (pathname.startsWith('/absensi') && pathname !== '/absensi/login') {
     const session = req.cookies.get('absensi_session')?.value;
@@ -42,5 +48,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/absensi/:path*'],
+  matcher: ['/admin/:path*', '/absensi/:path*', '/pasanggiri/:path*'],
 };

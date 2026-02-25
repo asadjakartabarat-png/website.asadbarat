@@ -567,3 +567,243 @@ function mapUserRow(row: any): User {
     updated_at: row.updated_at as string,
   };
 }
+
+// ─── PASANGGIRI DESA ─────────────────────────────────────────────────────────
+
+export async function getPasanggiriAllDesa() {
+  const result = await turso.execute({ sql: `SELECT * FROM pasanggiri_desa ORDER BY nama_desa`, args: [] });
+  return result.rows;
+}
+
+export async function createPasanggiriDesa(nama_desa: string) {
+  const now = new Date().toISOString();
+  await turso.execute({ sql: `INSERT INTO pasanggiri_desa (nama_desa, created_at) VALUES (?, ?)`, args: [nama_desa, now] });
+}
+
+export async function updatePasanggiriDesa(id: number, nama_desa: string) {
+  await turso.execute({ sql: `UPDATE pasanggiri_desa SET nama_desa = ? WHERE id = ?`, args: [nama_desa, id] });
+}
+
+export async function deletePasanggiriDesa(id: number) {
+  await turso.execute({ sql: `DELETE FROM pasanggiri_desa WHERE id = ?`, args: [id] });
+}
+
+// ─── PASANGGIRI USERS ────────────────────────────────────────────────────────
+
+export async function getPasanggiriUserByUsername(username: string) {
+  const result = await turso.execute({ sql: `SELECT * FROM pasanggiri_users WHERE username = ? AND is_active = 1`, args: [username] });
+  if (result.rows.length === 0) return null;
+  return result.rows[0];
+}
+
+export async function getAllPasanggiriUsers() {
+  const result = await turso.execute({ sql: `SELECT id, username, role, is_active, created_at, updated_at FROM pasanggiri_users ORDER BY created_at DESC`, args: [] });
+  return result.rows;
+}
+
+export async function createPasanggiriUser(data: { username: string; password: string; role: string }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `INSERT INTO pasanggiri_users (username, password, role, is_active, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)`,
+    args: [data.username, data.password, data.role, now, now],
+  });
+  const result = await turso.execute({ sql: `SELECT id, username, role, is_active, created_at, updated_at FROM pasanggiri_users WHERE username = ?`, args: [data.username] });
+  return result.rows[0];
+}
+
+export async function updatePasanggiriUser(id: number, data: { username?: string; password?: string; role?: string; is_active?: number }) {
+  const now = new Date().toISOString();
+  const fields: string[] = [];
+  const args: any[] = [];
+  if (data.username !== undefined) { fields.push('username = ?'); args.push(data.username); }
+  if (data.password !== undefined) { fields.push('password = ?'); args.push(data.password); }
+  if (data.role !== undefined) { fields.push('role = ?'); args.push(data.role); }
+  if (data.is_active !== undefined) { fields.push('is_active = ?'); args.push(data.is_active); }
+  fields.push('updated_at = ?'); args.push(now);
+  args.push(id);
+  await turso.execute({ sql: `UPDATE pasanggiri_users SET ${fields.join(', ')} WHERE id = ?`, args });
+  const result = await turso.execute({ sql: `SELECT id, username, role, is_active, created_at, updated_at FROM pasanggiri_users WHERE id = ?`, args: [id] });
+  return result.rows[0];
+}
+
+export async function deletePasanggiriUser(id: number) {
+  await turso.execute({ sql: `DELETE FROM pasanggiri_users WHERE id = ?`, args: [id] });
+}
+
+// ─── PASANGGIRI COMPETITIONS ─────────────────────────────────────────────────
+
+export async function getAllPasanggiriCompetitions(filters?: { status?: string; kelas?: string }) {
+  let sql = `SELECT c.*, d.nama_desa FROM pasanggiri_competitions c JOIN pasanggiri_desa d ON c.desa_id = d.id`;
+  const args: any[] = [];
+  const where: string[] = [];
+  if (filters?.status) { where.push('c.status = ?'); args.push(filters.status); }
+  if (filters?.kelas) { where.push('c.kelas = ?'); args.push(filters.kelas); }
+  if (where.length) sql += ' WHERE ' + where.join(' AND ');
+  sql += ' ORDER BY c.created_at DESC';
+  const result = await turso.execute({ sql, args });
+  return result.rows;
+}
+
+export async function createPasanggiriCompetition(data: { desa_id: number; kelas: string; kategori: string; golongan: string }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `INSERT INTO pasanggiri_competitions (desa_id, kelas, kategori, golongan, status, created_at, updated_at) VALUES (?, ?, ?, ?, 'ACTIVE', ?, ?)`,
+    args: [data.desa_id, data.kelas, data.kategori, data.golongan, now, now],
+  });
+  const result = await turso.execute({
+    sql: `SELECT c.*, d.nama_desa FROM pasanggiri_competitions c JOIN pasanggiri_desa d ON c.desa_id = d.id ORDER BY c.id DESC LIMIT 1`,
+    args: [],
+  });
+  return result.rows[0];
+}
+
+export async function updatePasanggiriCompetitionStatus(id: number, status: string) {
+  const now = new Date().toISOString();
+  await turso.execute({ sql: `UPDATE pasanggiri_competitions SET status = ?, updated_at = ? WHERE id = ?`, args: [status, now, id] });
+  const result = await turso.execute({ sql: `SELECT c.*, d.nama_desa FROM pasanggiri_competitions c JOIN pasanggiri_desa d ON c.desa_id = d.id WHERE c.id = ?`, args: [id] });
+  return result.rows[0];
+}
+
+export async function deletePasanggiriCompetition(id: number) {
+  await turso.execute({ sql: `DELETE FROM pasanggiri_competitions WHERE id = ?`, args: [id] });
+}
+
+// ─── PASANGGIRI SCORES ───────────────────────────────────────────────────────
+
+export async function getPasanggiriScores(filters?: { competition_id?: number; juri_name?: string }) {
+  let sql = `SELECT s.*, c.desa_id, c.kelas, c.golongan, c.kategori, d.nama_desa
+             FROM pasanggiri_scores s
+             JOIN pasanggiri_competitions c ON s.competition_id = c.id
+             JOIN pasanggiri_desa d ON c.desa_id = d.id`;
+  const args: any[] = [];
+  const where: string[] = [];
+  if (filters?.competition_id) { where.push('s.competition_id = ?'); args.push(filters.competition_id); }
+  if (filters?.juri_name) { where.push('s.juri_name = ?'); args.push(filters.juri_name); }
+  if (where.length) sql += ' WHERE ' + where.join(' AND ');
+  sql += ' ORDER BY s.created_at DESC';
+  const result = await turso.execute({ sql, args });
+  return result.rows.map(r => ({
+    ...r,
+    criteria_scores: JSON.parse(r.criteria_scores as string),
+    total_score: Number(r.total_score),
+  }));
+}
+
+export async function createPasanggiriScore(data: { competition_id: number; juri_name: string; criteria_scores: Record<string, number>; total_score: number }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `INSERT INTO pasanggiri_scores (competition_id, juri_name, criteria_scores, total_score, created_at) VALUES (?, ?, ?, ?, ?)`,
+    args: [data.competition_id, data.juri_name, JSON.stringify(data.criteria_scores), data.total_score, now],
+  });
+  const result = await turso.execute({
+    sql: `SELECT * FROM pasanggiri_scores WHERE competition_id = ? AND juri_name = ?`,
+    args: [data.competition_id, data.juri_name],
+  });
+  const row = result.rows[0];
+  return { ...row, criteria_scores: JSON.parse(row.criteria_scores as string), total_score: Number(row.total_score) };
+}
+
+// ─── PASANGGIRI ACTIVITY LOGS ────────────────────────────────────────────────
+
+export async function getPasanggiriActivityLogs(limit = 50) {
+  const result = await turso.execute({ sql: `SELECT * FROM pasanggiri_activity_logs ORDER BY created_at DESC LIMIT ?`, args: [limit] });
+  return result.rows;
+}
+
+export async function createPasanggiriActivityLog(data: { user_id: number; username: string; action: string; details?: string }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `INSERT INTO pasanggiri_activity_logs (user_id, username, action, details, created_at) VALUES (?, ?, ?, ?, ?)`,
+    args: [data.user_id, data.username, data.action, data.details || null, now],
+  });
+}
+
+// ─── PASANGGIRI PESERTA ──────────────────────────────────────────────────────
+
+export async function getAllPasanggiriPeserta() {
+  const result = await turso.execute({ sql: `SELECT p.*, d.nama_desa FROM pasanggiri_peserta p JOIN pasanggiri_desa d ON p.desa_id = d.id ORDER BY p.created_at ASC`, args: [] });
+  return result.rows;
+}
+
+export async function createPasanggiriPeserta(data: { nama_peserta: string; desa_id: number; kategori: string; golongan: string; kelas: string }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `INSERT INTO pasanggiri_peserta (nama_peserta, desa_id, kategori, golongan, kelas, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    args: [data.nama_peserta, data.desa_id, data.kategori, data.golongan, data.kelas, now, now],
+  });
+  const result = await turso.execute({ sql: `SELECT p.*, d.nama_desa FROM pasanggiri_peserta p JOIN pasanggiri_desa d ON p.desa_id = d.id ORDER BY p.id DESC LIMIT 1`, args: [] });
+  return result.rows[0];
+}
+
+export async function updatePasanggiriPeserta(id: number, data: { nama_peserta?: string; desa_id?: number; kategori?: string; golongan?: string; kelas?: string }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `UPDATE pasanggiri_peserta SET nama_peserta=?, desa_id=?, kategori=?, golongan=?, kelas=?, updated_at=? WHERE id=?`,
+    args: [data.nama_peserta!, data.desa_id!, data.kategori!, data.golongan!, data.kelas!, now, id],
+  });
+  const result = await turso.execute({ sql: `SELECT p.*, d.nama_desa FROM pasanggiri_peserta p JOIN pasanggiri_desa d ON p.desa_id = d.id WHERE p.id = ?`, args: [id] });
+  return result.rows[0];
+}
+
+export async function deletePasanggiriPeserta(id: number) {
+  await turso.execute({ sql: `DELETE FROM pasanggiri_peserta WHERE id = ?`, args: [id] });
+}
+
+// ─── PASANGGIRI UNDIAN ───────────────────────────────────────────────────────
+
+export async function getPasanggiriUndian(filters?: { kelas?: string; kategori?: string; golongan?: string }) {
+  let sql = `SELECT u.*, p.nama_peserta, d.nama_desa FROM pasanggiri_undian u JOIN pasanggiri_peserta p ON u.peserta_id = p.id JOIN pasanggiri_desa d ON p.desa_id = d.id`;
+  const args: any[] = [];
+  const where: string[] = [];
+  if (filters?.kelas) { where.push('u.kelas = ?'); args.push(filters.kelas); }
+  if (filters?.kategori) { where.push('u.kategori = ?'); args.push(filters.kategori); }
+  if (filters?.golongan) { where.push('u.golongan = ?'); args.push(filters.golongan); }
+  if (where.length) sql += ' WHERE ' + where.join(' AND ');
+  sql += ' ORDER BY u.urutan ASC';
+  const result = await turso.execute({ sql, args });
+  return result.rows;
+}
+
+export async function createPasanggiriUndian(data: { peserta_id: number; kelas: string; kategori: string; golongan: string; urutan: number }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `INSERT INTO pasanggiri_undian (peserta_id, kelas, kategori, golongan, urutan, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    args: [data.peserta_id, data.kelas, data.kategori, data.golongan, data.urutan, now, now],
+  });
+  const result = await turso.execute({ sql: `SELECT u.*, p.nama_peserta FROM pasanggiri_undian u JOIN pasanggiri_peserta p ON u.peserta_id = p.id ORDER BY u.id DESC LIMIT 1`, args: [] });
+  return result.rows[0];
+}
+
+export async function updatePasanggiriUndian(id: number, data: { urutan?: number }) {
+  const now = new Date().toISOString();
+  await turso.execute({ sql: `UPDATE pasanggiri_undian SET urutan=?, updated_at=? WHERE id=?`, args: [data.urutan!, now, id] });
+  const result = await turso.execute({ sql: `SELECT u.*, p.nama_peserta FROM pasanggiri_undian u JOIN pasanggiri_peserta p ON u.peserta_id = p.id WHERE u.id = ?`, args: [id] });
+  return result.rows[0];
+}
+
+export async function deletePasanggiriUndian(id: number) {
+  await turso.execute({ sql: `DELETE FROM pasanggiri_undian WHERE id = ?`, args: [id] });
+}
+
+// ─── PASANGGIRI EVENT STATUS ─────────────────────────────────────────────────
+
+export async function getPasanggiriEventStatus(kelas?: string) {
+  if (kelas) {
+    const result = await turso.execute({ sql: `SELECT * FROM pasanggiri_event_status WHERE kelas = ?`, args: [kelas] });
+    return result.rows[0] || null;
+  }
+  const result = await turso.execute({ sql: `SELECT * FROM pasanggiri_event_status`, args: [] });
+  return result.rows;
+}
+
+export async function upsertPasanggiriEventStatus(data: { kelas: string; is_locked: number; locked_by?: string }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `INSERT INTO pasanggiri_event_status (kelas, is_locked, locked_by, locked_at, updated_at)
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(kelas) DO UPDATE SET is_locked=excluded.is_locked, locked_by=excluded.locked_by, locked_at=excluded.locked_at, updated_at=excluded.updated_at`,
+    args: [data.kelas, data.is_locked, data.locked_by || null, data.is_locked ? now : null, now],
+  });
+  const result = await turso.execute({ sql: `SELECT * FROM pasanggiri_event_status WHERE kelas = ?`, args: [data.kelas] });
+  return result.rows[0];
+}
