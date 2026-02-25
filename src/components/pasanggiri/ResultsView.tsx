@@ -44,7 +44,7 @@ export default function ResultsView({ kelas }: Props) {
 
         const arr = Array.from(map.values());
         setResults(arr);
-        setDesaList([...new Set(arr.map(r => r.competition.desa))]);
+        setDesaList(Array.from(new Set(arr.map(r => r.competition.desa))));
       } catch (error) {
         console.error(error);
       } finally {
