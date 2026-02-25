@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense, lazy } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { User } from '@/types/pasanggiri';
 import Sidebar from '@/components/pasanggiri/Sidebar';
 
@@ -23,17 +23,29 @@ function getDefaultTab(role: string) {
 }
 
 export default function PasanggiriDashboardPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div></div>}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('users');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'users';
 
   useEffect(() => {
     fetch('/api/pasanggiri/auth/me')
       .then(r => r.json())
       .then(data => {
-        if (data.user) { setUser(data.user); setActiveTab(getDefaultTab(data.user.role)); }
+        if (data.user) {
+          setUser(data.user);
+          if (!searchParams.get('tab')) router.replace(`/pasanggiri/dashboard?tab=${getDefaultTab(data.user.role)}`);
+        }
         else router.push('/pasanggiri/login');
       })
       .catch(() => router.push('/pasanggiri/login'))
@@ -65,7 +77,7 @@ export default function PasanggiriDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="hidden lg:flex">
-        <Sidebar user={user} activeTab={activeTab} onTabChange={setActiveTab} onLogout={handleLogout} />
+        <Sidebar user={user} activeTab={activeTab} onTabChange={tab => router.push(`/pasanggiri/dashboard?tab=${tab}`)} onLogout={handleLogout} />
         <div className="flex-1 ml-64"><main className="p-6">{renderDashboard()}</main></div>
       </div>
       <div className="lg:hidden">
@@ -84,7 +96,7 @@ export default function PasanggiriDashboardPage() {
         <div className="lg:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)} />
           <div className="absolute left-0 top-0 h-full w-64">
-            <Sidebar user={user} activeTab={activeTab} onTabChange={tab => { setActiveTab(tab); setSidebarOpen(false); }} onLogout={handleLogout} />
+            <Sidebar user={user} activeTab={activeTab} onTabChange={tab => { router.push(`/pasanggiri/dashboard?tab=${tab}`); setSidebarOpen(false); }} onLogout={handleLogout} />
           </div>
         </div>
       )}
