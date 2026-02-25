@@ -94,6 +94,17 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }: Side
       </nav>
 
       <div className="p-4 border-t border-gray-200">
+        {user.role === 'SUPER_ADMIN' && !isCollapsed && (
+          <div className="mb-3 space-y-1">
+            <p className="text-xs text-gray-400 font-semibold uppercase px-1 mb-1">Akses Cepat</p>
+            <a href="/absensi/dashboard" className="w-full flex items-center space-x-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium">
+              <span>📅</span><span>Dashboard Absensi</span>
+            </a>
+            <a href="/admin/dashboard" className="w-full flex items-center space-x-2 px-3 py-2 text-green-600 hover:bg-green-50 rounded-lg text-sm font-medium">
+              <span>📰</span><span>Dashboard Berita</span>
+            </a>
+          </div>
+        )}
         {!isCollapsed && (
           <button
             onClick={onLogout}
