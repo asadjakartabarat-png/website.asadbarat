@@ -19,6 +19,8 @@ export default function AdministrasiPertandingan({ userRole, userId }: Props) {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedUndian, setSelectedUndian] = useState<any>(null);
+  const [addDesaModal, setAddDesaModal] = useState<{ kategori: string; golongan: string } | null>(null);
+  const [selectedDesaId, setSelectedDesaId] = useState('');
 
   const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
   const canEdit = isAdmin && !eventStatus?.is_locked;
@@ -56,19 +58,22 @@ export default function AdministrasiPertandingan({ userRole, userId }: Props) {
     } catch (error) { console.error(error); }
   };
 
-  const handleAddDesa = async (kategori: string, golongan: string) => {
+  const handleAddDesa = (kategori: string, golongan: string) => {
     const existingDesas = undianData.filter(u => u.kategori === kategori && u.golongan === golongan).map(u => u.desa || u.nama_desa);
     const availableDesas = desaList.filter(d => !existingDesas.includes(d.nama_desa));
     if (availableDesas.length === 0) { alert('Semua desa sudah ditambahkan!'); return; }
+    setSelectedDesaId('');
+    setAddDesaModal({ kategori, golongan });
+  };
 
-    const desaName = prompt(`Pilih desa:\n${availableDesas.map(d => d.nama_desa).join(', ')}`);
-    if (!desaName) return;
-    const selectedDesa = availableDesas.find(d => d.nama_desa === desaName);
-    if (!selectedDesa) { alert('Desa tidak valid'); return; }
+  const handleConfirmAddDesa = async () => {
+    if (!addDesaModal || !selectedDesaId) return;
+    const { kategori, golongan } = addDesaModal;
+    const selectedDesa = desaList.find(d => String(d.id) === selectedDesaId);
+    if (!selectedDesa) return;
 
     const nextUrutan = Math.max(0, ...undianData.filter(u => u.kategori === kategori && u.golongan === golongan).map(u => u.urutan)) + 1;
-
-    // First create a peserta entry for this desa
+    setAddDesaModal(null);
     try {
       const pesertaRes = await fetch('/api/pasanggiri/peserta', {
         method: 'POST',
@@ -76,7 +81,6 @@ export default function AdministrasiPertandingan({ userRole, userId }: Props) {
         body: JSON.stringify({ nama_peserta: selectedDesa.nama_desa, desa_id: selectedDesa.id, kategori, golongan, kelas: activeTab }),
       });
       const peserta = await pesertaRes.json();
-
       await fetch('/api/pasanggiri/undian', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -181,6 +185,30 @@ export default function AdministrasiPertandingan({ userRole, userId }: Props) {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {addDesaModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-xl">
+            <h3 className="text-lg font-bold mb-4">Tambah Desa</h3>
+            <p className="text-sm text-gray-600 mb-2">{addDesaModal.kategori} — {addDesaModal.golongan}</p>
+            <select
+              value={selectedDesaId}
+              onChange={e => setSelectedDesaId(e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2 mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              <option value="">-- Pilih Desa --</option>
+              {desaList
+                .filter(d => !undianData.filter(u => u.kategori === addDesaModal.kategori && u.golongan === addDesaModal.golongan).map(u => u.desa || u.nama_desa).includes(d.nama_desa))
+                .map(d => <option key={d.id} value={d.id}>{d.nama_desa}</option>)
+              }
+            </select>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setAddDesaModal(null)} className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm">Batal</button>
+              <button onClick={handleConfirmAddDesa} disabled={!selectedDesaId} className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 text-sm disabled:opacity-50">Tambah</button>
+            </div>
           </div>
         </div>
       )}
