@@ -109,12 +109,12 @@ export default function AbsensiLayout({ children, session }: AbsensiLayoutProps)
       {/* Main */}
       <div className="lg:pl-64">
         <div className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-white px-4 shadow-sm">
-          <button className="lg:hidden" onClick={() => setSidebarOpen(true)}>
+          <button type="button" className="lg:hidden p-2 -ml-2" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-6 w-6" />
           </button>
           <div className="flex-1" />
           <span className="text-sm text-gray-600 hidden sm:block">{session.full_name}</span>
-          <button onClick={handleLogout} className="flex items-center text-gray-500 hover:text-gray-700 text-sm lg:hidden">
+          <button type="button" onClick={handleLogout} className="flex items-center justify-center text-gray-500 hover:text-gray-700 lg:hidden p-2 min-w-[44px] min-h-[44px]">
             <LogOut className="h-5 w-5" />
           </button>
         </div>
