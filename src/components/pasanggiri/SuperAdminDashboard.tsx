@@ -372,43 +372,53 @@ export default function SuperAdminDashboard({ user, activeTab = 'users' }: Props
 
       {activeTab === 'system' && (
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold">Sistem</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="card">
-              <h3 className="text-lg font-medium mb-4">Statistik Sistem</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between"><span>Total User:</span><span className="font-medium">{users.length}</span></div>
-                <div className="flex justify-between"><span>User Aktif:</span><span className="font-medium text-green-600">{users.filter(u => u.is_active).length}</span></div>
-                <div className="flex justify-between"><span>Total Log:</span><span className="font-medium">{logs.length}</span></div>
-                <div className="flex justify-between"><span>Sistem:</span><span className="font-medium text-blue-600">Online</span></div>
+          <h2 className="text-xl font-semibold text-gray-900">Sistem</h2>
+
+          {/* Statistik */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: 'Total User', value: users.length, color: 'text-gray-900' },
+              { label: 'User Aktif', value: users.filter(u => u.is_active).length, color: 'text-green-600' },
+              { label: 'Total Log', value: logs.length, color: 'text-gray-900' },
+              { label: 'Status', value: 'Online', color: 'text-blue-600' },
+            ].map(stat => (
+              <div key={stat.label} className="card text-center">
+                <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
+                <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
               </div>
+            ))}
+          </div>
+
+          {/* Manajemen Desa */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">🏘️ Manajemen Desa</h3>
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                placeholder="Nama desa baru..."
+                value={newDesaName}
+                onChange={e => setNewDesaName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && newDesaName.trim() && addDesa()}
+                className="border border-gray-300 rounded-lg px-4 py-2 flex-1 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+              <button
+                onClick={addDesa}
+                disabled={!newDesaName.trim()}
+                className="bg-red-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+              >+ Tambah</button>
             </div>
-            <div className="card">
-              <h3 className="text-lg font-medium mb-4">Manajemen Desa</h3>
-              <div className="flex gap-2 mb-3">
-                <input
-                  type="text"
-                  placeholder="Nama desa baru..."
-                  value={newDesaName}
-                  onChange={e => setNewDesaName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && newDesaName.trim() && addDesa()}
-                  className="border rounded px-3 py-2 flex-1 text-sm"
-                />
-                <button
-                  onClick={addDesa}
-                  disabled={!newDesaName.trim()}
-                  className="bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 disabled:opacity-50"
-                >Tambah</button>
-              </div>
-              <div className="space-y-2">
+            {desaList.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-4">Belum ada desa terdaftar</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                 {desaList.map(d => (
-                  <div key={d.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                    <span className="text-gray-900">{d.nama_desa}</span>
-                    <button onClick={() => deleteDesa(d.id, d.nama_desa)} className="text-red-600 hover:text-red-800 text-xs">Hapus</button>
+                  <div key={d.id} className="flex justify-between items-center px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <span className="text-sm font-medium text-gray-800">{d.nama_desa}</span>
+                    <button onClick={() => deleteDesa(d.id, d.nama_desa)} className="text-red-500 hover:text-red-700 text-xs ml-2">Hapus</button>
                   </div>
                 ))}
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
