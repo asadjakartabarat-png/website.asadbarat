@@ -1,232 +1,361 @@
-# Website Berita - BeritaKu
+# Website Persinas Asad Jakarta Barat
 
-Website berita modern dengan admin panel lengkap menggunakan Next.js 14, TypeScript, dan Supabase.
+Website resmi Persinas Asad Jakarta Barat — mencakup portal berita, sistem absensi penderesan, dan aplikasi pasanggiri (kompetisi pencak silat).
 
-## 🚀 Fitur Utama
+**URL Produksi:** https://asadjakbar.vercel.app
 
-### Frontend Publik
-- **Homepage**: Hero section dengan breaking news dan grid artikel terbaru
-- **Detail Artikel**: Layout clean dengan share buttons dan artikel terkait
-- **Kategori Pages**: Halaman khusus untuk setiap kategori berita
-- **Search**: Pencarian artikel dengan debouncing
-- **Responsive Design**: Mobile-first approach
+---
 
-### Admin Panel
-- **Dashboard**: Statistik dan overview sistem
-- **Article Management**: CRUD artikel dengan rich text editor
-- **Category Management**: Kelola kategori berita
-- **User Management**: Kelola admin dan editor
-- **Media Manager**: Upload dan kelola gambar
-- **Role-based Access**: Super Admin, Editor, Writer
+## 🗂️ Modul Aplikasi
+
+### 1. Portal Berita (Publik)
+- Homepage dengan artikel terbaru dan featured article
+- Detail artikel dengan artikel terkait
+- Halaman per kategori
+- Pencarian artikel
+- Halaman About, Contact, Privacy
+- Form newsletter subscriber
+
+### 2. Admin Panel Berita (`/admin`)
+- Login dengan JWT (cookie `admin_token`)
+- Dashboard statistik
+- CRUD artikel dengan rich text editor (ReactQuill)
+- CRUD kategori
+- Manajemen user (super_admin, editor, writer)
+- Media manager (upload gambar)
+- Pesan masuk dari form contact
+- Manajemen subscriber
+- Akses cepat ke Dashboard Pasanggiri & Absensi (khusus super_admin)
+
+**Role Admin Berita:**
+| Role | Akses |
+|------|-------|
+| super_admin | Full akses semua fitur |
+| editor | Artikel, Kategori, Media, Pesan, Subscribers |
+| writer | Artikel, Media |
+
+### 3. Absensi Penderesan (`/absensi`)
+- Login dengan cookie session `absensi_session`
+- Dashboard per role dengan menu akses cepat
+- Input absensi per kelompok/desa
+- Laporan per desa dan laporan DKI (rekap bulanan)
+- Master data (desa, kelompok)
+- Kelola user absensi
+- Akses cepat ke Dashboard Pasanggiri & Berita (khusus super_admin)
+
+**Role Absensi:**
+| Role | Akses |
+|------|-------|
+| super_admin | Full akses semua fitur |
+| koordinator_desa | Input absensi |
+| koordinator_daerah | Lihat laporan |
+| viewer | Lihat laporan + laporan DKI |
+| astrida | Input absensi + laporan |
+
+### 4. Pasanggiri (Kompetisi Pencak Silat) (`/pasanggiri`)
+- Login dengan cookie session `pasanggiri_session`
+- Sistem penilaian multi-juri (5 juri, ambil 3 nilai tengah)
+- Kontrol sesi pertandingan per desa/golongan/kategori/kelas
+- Ranking real-time (tampil segera setelah ada nilai juri, tanpa menunggu status COMPLETED)
+- Administrasi peserta dan undian urutan tampil
+- Lock/unlock event per kelas (PUTRA/PUTRI)
+- Juara umum gabungan PUTRA + PUTRI
+- Log aktivitas
+- Akses cepat ke Dashboard Absensi & Berita (khusus SUPER_ADMIN)
+
+**Role Pasanggiri:**
+| Role | Akses |
+|------|-------|
+| SUPER_ADMIN | Full akses, kelola user, desa, sesi, sistem |
+| ADMIN | Dashboard, ranking, detail penilaian, log, administrasi |
+| KOORDINATOR_PUTRA / PUTRI | Supervisi sesi, ranking, detail penilaian |
+| SIRKULATOR_PUTRA / PUTRI | Kontrol sesi aktif, hasil |
+| JURI_PUTRA / JURI_PUTRI | Input nilai, riwayat penilaian |
+| VIEWER | Lihat hasil dan ranking |
+
+**Kategori Pertandingan:** PERORANGAN, BERKELOMPOK, MASAL, ATT, BERPASANGAN  
+**Golongan:** USIA DINI, PRA REMAJA, REMAJA, DEWASA, ISTIMEWA  
+**Kelas:** PUTRA, PUTRI
+
+---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Next.js 14 dengan TypeScript
-- **Styling**: Tailwind CSS
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
-- **State Management**: Zustand
-- **Rich Text Editor**: ReactQuill
-- **Form Validation**: React Hook Form + Zod
-- **Deployment**: Vercel
+| Layer | Teknologi |
+|-------|-----------|
+| Framework | Next.js 14.0.0 (App Router) |
+| Language | TypeScript 5 |
+| Styling | Tailwind CSS 3 |
+| Database | Turso (`@libsql/client` 0.14.0) |
+| Auth | JWT (`jose` 5) + Cookie session |
+| State | Zustand 4 |
+| Form | React Hook Form 7 + Zod 3 + `@hookform/resolvers` |
+| Editor | ReactQuill 2 |
+| Icons | Lucide React |
+| Toast | React Hot Toast 2 |
+| Date | date-fns 2 |
+| Slug | slugify |
+| Deploy | Vercel (free tier) |
+| Media Storage | Cloudinary |
+
+---
 
 ## 📦 Instalasi
 
-### 1. Clone Repository
 ```bash
-git clone <repository-url>
-cd website-berita
-```
-
-### 2. Install Dependencies
-```bash
+# 1. Install dependencies
 npm install
-```
 
-### 3. Setup Environment Variables
-Buat file `.env.local` berdasarkan `.env.example`:
+# 2. Buat file .env.local
+# Isi variabel environment (lihat bagian Environment Variables)
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://eizrsybushirzoxdpilc.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpenJzeWJ1c2hpcnpveGRwaWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4MTkyOTUsImV4cCI6MjA3MzM5NTI5NX0.tF4AmoyAZza0g2OgPdfPJ9_1Zd1vh8QqNfYE16ZH6Kg
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpenJzeWJ1c2hpcnpveGRwaWxjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzgxOTI5NSwiZXhwIjoyMDczMzk1Mjk1fQ._tVsz63XLsRm8FDMLzux9EomySIL6F30Cg3MuyzYQK4
-NEXT_PUBLIC_SITE_URL=https://asad-jakbar.vercel.app
-```
-
-### 4. Setup Database
-1. Buat project baru di [Supabase](https://supabase.com)
-2. Jalankan SQL script dari file `database.sql` di SQL Editor Supabase
-3. Buat user admin pertama di tabel `users`
-
-### 5. Jalankan Development Server
-```bash
+# 3. Jalankan development server
 npm run dev
 ```
 
-Buka [http://localhost:3000](http://localhost:3000) untuk melihat website.
+Buka http://localhost:3000
 
-## 🗄️ Database Schema
+---
 
-### Users Table
-```sql
-users (
-  id UUID PRIMARY KEY,
-  email VARCHAR UNIQUE,
-  full_name VARCHAR,
-  role VARCHAR CHECK (role IN ('super_admin', 'editor', 'writer')),
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
-)
+## 🔑 Environment Variables
+
+Buat file `.env.local` dengan isi:
+
+```env
+# Turso Database
+TURSO_DATABASE_URL=libsql://your-database.turso.io
+TURSO_AUTH_TOKEN=your-turso-auth-token
+
+# JWT Secret untuk admin panel berita
+JWT_SECRET=your-secret-key-change-in-production
+
+# URL site
+NEXT_PUBLIC_SITE_URL=https://asadjakbar.vercel.app
+
+# Cloudinary (untuk media manager di admin panel)
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your-upload-preset
 ```
 
-### Categories Table
+---
+
+## 🗄️ Database Schema (Turso / SQLite)
+
+Schema modul Berita ada di `database.sql`. Schema Absensi dan Pasanggiri dibuat manual langsung di Turso Web Console → Shell.
+
+### Berita
 ```sql
-categories (
-  id UUID PRIMARY KEY,
-  name VARCHAR UNIQUE,
-  slug VARCHAR UNIQUE,
-  description TEXT,
-  created_at TIMESTAMP
-)
+users (id, email, password, full_name, role, created_at, updated_at)
+-- role: 'super_admin' | 'editor' | 'writer'
+
+categories (id, name, slug, description, created_at)
+
+articles (id, title, slug, content, excerpt, featured_image, category_id,
+          author_id, status, published_at, meta_title, meta_description,
+          created_at, updated_at)
+-- status: 'draft' | 'published' | 'scheduled'
+
+messages (id, name, email, message, is_read, created_at)
+subscribers (id, email, created_at)
 ```
 
-### Articles Table
+### Absensi
 ```sql
-articles (
-  id UUID PRIMARY KEY,
-  title VARCHAR,
-  slug VARCHAR UNIQUE,
-  content TEXT,
-  excerpt TEXT,
-  featured_image VARCHAR,
-  category_id UUID REFERENCES categories(id),
-  author_id UUID REFERENCES users(id),
-  status VARCHAR CHECK (status IN ('draft', 'published', 'scheduled')),
-  published_at TIMESTAMP,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP,
-  meta_title VARCHAR,
-  meta_description TEXT
-)
+absensi_users (id, username, password, full_name, role, desa_id, is_active,
+               created_at, updated_at)
+absensi_desa (id, nama_desa, created_at)
+absensi_kelompok (id, desa_id, nama_kelompok, target_putra, target_putri, created_at)
+absensi_data (id, kelompok_id, bulan, tahun, hadir_putra, hadir_putri,
+              input_by, created_at, updated_at)
+-- UNIQUE constraint: (kelompok_id, bulan, tahun)
 ```
 
-## 🚀 Deployment ke Vercel
+### Pasanggiri
+```sql
+pasanggiri_users (id, username, password, role, is_active, created_at, updated_at)
+pasanggiri_desa (id, nama_desa, created_at)
+pasanggiri_peserta (id, nama_peserta, desa_id, kategori, golongan, kelas,
+                    created_at, updated_at)
+pasanggiri_undian (id, peserta_id, kelas, kategori, golongan, urutan,
+                   created_at, updated_at)
+pasanggiri_competitions (id, desa_id, kelas, kategori, golongan, status,
+                         created_at, updated_at)
+-- status: 'ACTIVE' | 'COMPLETED'
 
-### 1. Push ke GitHub
+pasanggiri_scores (id, competition_id, juri_name, criteria_scores, total_score, created_at)
+-- criteria_scores disimpan sebagai JSON string
+
+pasanggiri_activity_logs (id, user_id, username, action, details, created_at)
+pasanggiri_event_status (id, kelas, is_locked, locked_by, locked_at, updated_at)
+-- UNIQUE constraint: (kelas)
+```
+
+---
+
+## 🚀 Deploy ke Vercel
+
+1. Push ke GitHub
+2. Import repository di [Vercel Dashboard](https://vercel.com/dashboard)
+3. Set environment variables:
+   - `TURSO_DATABASE_URL`
+   - `TURSO_AUTH_TOKEN`
+   - `JWT_SECRET`
+   - `NEXT_PUBLIC_SITE_URL`
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
+   - `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`
+   - `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`
+4. Deploy otomatis setiap push ke branch `main`
+
+---
+
+## 📁 Struktur Folder
+
+```
+src/
+├── app/
+│   ├── page.tsx                    # Homepage berita
+│   ├── layout.tsx                  # Root layout (Inter font, Toaster)
+│   ├── globals.css                 # Global styles + .card, .skeleton
+│   ├── about/                      # Halaman about
+│   ├── contact/                    # Halaman contact
+│   ├── privacy/                    # Halaman privacy
+│   ├── articles/[slug]/            # Detail artikel
+│   ├── categories/[slug]/          # Artikel per kategori
+│   ├── search/                     # Pencarian artikel
+│   ├── admin/                      # Admin panel berita
+│   │   ├── layout.tsx              # Sidebar admin (role-based nav)
+│   │   ├── login/
+│   │   ├── dashboard/
+│   │   ├── articles/               # List, new, [id]/edit
+│   │   ├── categories/             # List, new
+│   │   ├── users/
+│   │   ├── media/
+│   │   ├── messages/
+│   │   └── subscribers/
+│   ├── absensi/                    # Sistem absensi
+│   │   ├── layout.tsx
+│   │   ├── login/
+│   │   ├── dashboard/
+│   │   ├── input/
+│   │   ├── laporan/
+│   │   ├── laporan-dki/
+│   │   ├── master-data/
+│   │   └── kelola-user/
+│   ├── pasanggiri/                 # Sistem pasanggiri
+│   │   ├── login/
+│   │   └── dashboard/
+│   └── api/                        # API routes
+│       ├── auth/                   # Login/logout/me (admin berita)
+│       ├── articles/
+│       ├── categories/
+│       ├── users/
+│       ├── media/
+│       ├── messages/
+│       ├── subscribers/
+│       ├── upload/
+│       ├── absensi/
+│       │   ├── auth/               # Login/logout absensi
+│       │   ├── data/
+│       │   ├── desa/
+│       │   ├── kelompok/
+│       │   ├── laporan/
+│       │   ├── laporan-dki/
+│       │   └── users/
+│       └── pasanggiri/
+│           ├── auth/               # Login/logout/me pasanggiri
+│           ├── competitions/       # CRUD + [id]/
+│           ├── scores/
+│           ├── results/
+│           ├── desa/
+│           ├── peserta/
+│           ├── undian/
+│           ├── users/
+│           ├── event-status/
+│           └── activity-logs/
+├── components/
+│   ├── public/                     # ArticleCard, Header, Footer, HeroSection,
+│   │                               # CategorySection, ContactForm, RelatedArticles,
+│   │                               # NewsletterSection, ShareButtons
+│   ├── admin/                      # ArticleForm, CategoryForm, AddUserButton,
+│   │                               # DeleteArticleButton, DeleteCategoryButton,
+│   │                               # DeleteUserButton
+│   ├── absensi/                    # AbsensiLayout, InputAbsensiClient,
+│   │                               # LaporanClient, LaporanDKIClient,
+│   │                               # MasterDataClient, KelolaUserClient
+│   ├── pasanggiri/                 # SuperAdminDashboard, AdminDashboard,
+│   │                               # KoordinatorDashboard, SirkulatorDashboard,
+│   │                               # JuriDashboard, ViewerDashboard, Sidebar,
+│   │                               # RankingView, ResultsView, ScoringForm,
+│   │                               # ScoringDetails, ScoreBreakdownModal,
+│   │                               # AdministrasiPertandingan, ModalPeserta,
+│   │                               # PesertaTerdaftarTab, JuaraUmumGabungan,
+│   │                               # JuaraUmumView
+│   └── ui/                         # Button, Card, Input
+├── lib/
+│   ├── turso/
+│   │   ├── client.ts               # Turso client (@libsql/client)
+│   │   └── db.ts                   # Semua query functions (berita, absensi, pasanggiri)
+│   ├── pasanggiri/
+│   │   └── scoring.ts              # calculateFinalScore, middle-3, tie-breaker
+│   ├── utils/
+│   │   └── index.ts                # generateSlug, formatDate, formatDateTime,
+│   │                               # truncateText, classNames/cn
+│   └── store.ts                    # Zustand store (auth admin berita)
+├── types/
+│   ├── index.ts                    # User, Category, Article, Media types (berita)
+│   └── pasanggiri.ts               # User, Competition, Score, ActivityLog,
+│                                   # SCORING_CRITERIA, GOLONGAN_LIST, KATEGORI_LIST
+└── middleware.ts                   # Route protection: /admin (JWT), /absensi, /pasanggiri (session)
+```
+
+---
+
+## 🔒 Autentikasi
+
+| Modul | Cookie | Login Field | Metode |
+|-------|--------|-------------|--------|
+| Admin Berita | `admin_token` | email | JWT via `jose`, diverifikasi di middleware |
+| Absensi | `absensi_session` | username | JSON session di cookie |
+| Pasanggiri | `pasanggiri_session` | username | JSON session di cookie |
+
+Semua route dilindungi oleh `middleware.ts` dengan matcher `/admin/:path*`, `/absensi/:path*`, `/pasanggiri/:path*`.
+
+> ⚠️ **Catatan Keamanan:** Password semua modul saat ini disimpan dan dibandingkan sebagai plain text. Disarankan menggunakan hashing (bcrypt) sebelum go-live ke produksi.
+
+---
+
+## 🧮 Sistem Penilaian Pasanggiri
+
+Menggunakan metode **middle-3** (buang nilai tertinggi dan terendah dari 5 juri):
+
+| Jumlah Juri | Metode |
+|-------------|--------|
+| 5 juri | Buang tertinggi & terendah, jumlah 3 tengah |
+| 4 juri | Buang tertinggi, jumlah 3 terendah |
+| 3 juri | Jumlah semua |
+| < 3 juri | Jumlah semua yang ada |
+
+Ranking tampil real-time segera setelah ada nilai dari juri (tidak perlu menunggu status COMPLETED).
+
+Tie-breaker per kategori berdasarkan prioritas kriteria:
+- **PERORANGAN:** ORISINALITAS → KEMANTAPAN → STAMINA
+- **ATT:** ORISINALITAS → KEMANTAPAN → KEKAYAAAN TEKNIK
+- **BERKELOMPOK:** ORISINALITAS → KEMANTAPAN → KEKOMPAKAN
+- **MASAL:** ORISINALITAS → KEMANTAPAN → KEKOMPAKAN → KREATIFITAS
+- **BERPASANGAN:** TEKNIK SERANG BELA → KEMANTAPAN → PENGHAYATAN
+
+---
+
+## 🧪 Scripts
+
 ```bash
-git add .
-git commit -m "Initial commit"
-git push origin main
+npm run dev      # Development server
+npm run build    # Build production
+npm run start    # Start production server
+npm run lint     # Linting
 ```
-
-### 2. Deploy ke Vercel
-1. Buka [Vercel Dashboard](https://vercel.com/dashboard)
-2. Klik "New Project"
-3. Import repository dari GitHub
-4. Set environment variables:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-   - `NEXT_PUBLIC_SITE_URL` (URL production Anda)
-5. Deploy
-
-### 3. Setup Custom Domain (Opsional)
-1. Di Vercel Dashboard, buka project settings
-2. Tambahkan custom domain
-3. Update DNS records sesuai instruksi Vercel
-
-## 👥 User Roles
-
-### Super Admin
-- Full access ke semua fitur
-- Kelola users, categories, articles
-- Kelola settings sistem
-
-### Editor
-- Kelola semua articles
-- Kelola categories
-- Tidak bisa kelola users
-
-### Writer
-- Hanya bisa kelola artikel sendiri
-- Tidak bisa kelola categories atau users
-
-## 📱 Responsive Design
-
-Website ini menggunakan mobile-first approach dengan breakpoints:
-- Mobile: < 768px
-- Tablet: 768px - 1024px
-- Desktop: > 1024px
-
-## 🔒 Security Features
-
-- Row Level Security (RLS) di Supabase
-- Route protection dengan middleware
-- Role-based access control
-- Input validation dengan Zod
-- XSS protection
-
-## 🎨 Design System
-
-### Colors
-- Primary: Red (#DC2626) - seperti Tempo
-- Secondary: Gray (#6B7280)
-- Background: White (#FFFFFF)
-- Text: Black (#111827)
-
-### Typography
-- Font: Inter (Google Fonts)
-- Heading: Bold weights
-- Body: Regular weight
-
-## 📝 Content Management
-
-### Artikel
-- Rich text editor dengan ReactQuill
-- Auto slug generation dari title
-- SEO meta fields
-- Featured image support
-- Status: Draft, Published, Scheduled
-
-### Media
-- Image upload ke Supabase Storage
-- Automatic optimization
-- File size limits
-- Supported formats: JPG, PNG, WebP
-
-## 🔍 SEO Features
-
-- Meta tags otomatis
-- Open Graph support
-- Structured data
-- Sitemap generation
-- Clean URLs dengan slug
-
-## 🚦 Performance
-
-- Next.js 14 App Router
-- Server-side rendering (SSR)
-- Image optimization
-- Code splitting
-- Lazy loading
-
-## 🧪 Testing
-
-```bash
-# Run linting
-npm run lint
-
-# Build production
-npm run build
-
-# Start production server
-npm start
-```
-
-## 📞 Support
-
-Untuk pertanyaan atau bantuan, silakan buat issue di repository ini atau hubungi tim development.
-
-## 📄 License
-
-MIT License - lihat file LICENSE untuk detail lengkap.
