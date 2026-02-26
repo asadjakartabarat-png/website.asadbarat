@@ -74,17 +74,6 @@ export default function AbsensiLayout({ children, session }: AbsensiLayoutProps)
           </Link>
         ))}
       </nav>
-      {session.role === 'super_admin' && (
-        <div className="px-2 py-3 border-t border-green-700">
-          <p className="text-xs text-green-400 font-semibold uppercase px-1 mb-1">Akses Cepat</p>
-          <a href="/pasanggiri/dashboard" className="flex items-center space-x-2 px-3 py-2 text-red-300 hover:bg-green-700 hover:text-white rounded-md text-sm font-medium">
-            <span>🥋</span><span>Dashboard Pasanggiri</span>
-          </a>
-          <a href="/admin/dashboard" className="flex items-center space-x-2 px-3 py-2 text-yellow-300 hover:bg-green-700 hover:text-white rounded-md text-sm font-medium">
-            <span>📰</span><span>Dashboard Berita</span>
-          </a>
-        </div>
-      )}
     </>
   );
 
