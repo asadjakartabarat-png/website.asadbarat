@@ -58,21 +58,34 @@ export default function AbsensiLayout({ children, session }: AbsensiLayoutProps)
     router.push('/absensi/login');
   };
 
-  const NavLinks = () => (
-    <nav className="flex-1 space-y-1 px-2 py-4">
-      {navItems.map((item) => (
-        <Link key={item.name} href={item.href}
-          onClick={() => setSidebarOpen(false)}
-          className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-            pathname === item.href
-              ? 'bg-green-700 text-white'
-              : 'text-green-100 hover:bg-green-700 hover:text-white'
-          }`}>
-          <item.icon className="mr-3 h-5 w-5" />
-          {item.name}
-        </Link>
-      ))}
-    </nav>
+  const SidebarContent = () => (
+    <>
+      <nav className="flex-1 space-y-1 px-2 py-4">
+        {navItems.map((item) => (
+          <Link key={item.name} href={item.href}
+            onClick={() => setSidebarOpen(false)}
+            className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+              pathname === item.href
+                ? 'bg-green-700 text-white'
+                : 'text-green-100 hover:bg-green-700 hover:text-white'
+            }`}>
+            <item.icon className="mr-3 h-5 w-5" />
+            {item.name}
+          </Link>
+        ))}
+      </nav>
+      {session.role === 'super_admin' && (
+        <div className="px-2 py-3 border-t border-green-700">
+          <p className="text-xs text-green-400 font-semibold uppercase px-1 mb-1">Akses Cepat</p>
+          <a href="/pasanggiri/dashboard" className="flex items-center space-x-2 px-3 py-2 text-red-300 hover:bg-green-700 hover:text-white rounded-md text-sm font-medium">
+            <span>🥋</span><span>Dashboard Pasanggiri</span>
+          </a>
+          <a href="/admin/dashboard" className="flex items-center space-x-2 px-3 py-2 text-yellow-300 hover:bg-green-700 hover:text-white rounded-md text-sm font-medium">
+            <span>📰</span><span>Dashboard Berita</span>
+          </a>
+        </div>
+      )}
+    </>
   );
 
   return (
@@ -86,7 +99,7 @@ export default function AbsensiLayout({ children, session }: AbsensiLayoutProps)
               <span className="text-white font-bold">Absensi ASAD</span>
               <button onClick={() => setSidebarOpen(false)} className="text-white"><X className="h-6 w-6" /></button>
             </div>
-            <NavLinks />
+            <SidebarContent />
           </div>
         </div>
       )}
@@ -96,7 +109,7 @@ export default function AbsensiLayout({ children, session }: AbsensiLayoutProps)
         <div className="flex h-16 items-center px-4">
           <span className="text-white font-bold text-sm">Absensi Penderesan ASAD</span>
         </div>
-        <NavLinks />
+        <SidebarContent />
         <div className="p-4 border-t border-green-700">
           {session.role === 'super_admin' && (
             <div className="mb-3 space-y-1">
