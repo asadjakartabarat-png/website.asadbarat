@@ -28,7 +28,7 @@ export default function RankingView({ kelas }: Props) {
       setLoading(true);
       try {
         const [competitionsRes, scoresRes] = await Promise.all([
-          fetch(`/api/pasanggiri/competitions?kelas=${kelas}&status=COMPLETED`),
+          fetch(`/api/pasanggiri/competitions?kelas=${kelas}`),
           fetch('/api/pasanggiri/scores'),
         ]);
         const competitions = await competitionsRes.json();
@@ -40,12 +40,14 @@ export default function RankingView({ kelas }: Props) {
           if (selectedGolongan !== 'ALL' && comp.golongan !== selectedGolongan) return;
           if (selectedKategori !== 'ALL' && comp.kategori !== selectedKategori) return;
 
+          const competitionScores = scores.filter((s: any) => s.competition_id === comp.id);
+          if (competitionScores.length === 0) return;
+
           const key = comp.desa;
           if (!desaResults[key]) {
             desaResults[key] = { desa: comp.desa, kelas: comp.kelas, categories: {}, categoryDetails: {}, total_score: 0 };
           }
 
-          const competitionScores = scores.filter((s: any) => s.competition_id === comp.id);
           const totalScore = calculateFinalScore(competitionScores);
 
           if (!desaResults[key].categoryDetails[comp.kategori]) desaResults[key].categoryDetails[comp.kategori] = [];
