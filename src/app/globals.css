@@ -54,6 +54,10 @@ a {
   display: none;
 }
 
+.card {
+  @apply bg-white rounded-xl border border-gray-200 shadow-sm p-4;
+}
+
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
