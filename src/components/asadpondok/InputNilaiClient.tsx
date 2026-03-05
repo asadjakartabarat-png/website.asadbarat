@@ -129,13 +129,27 @@ export default function InputNilaiClient({ user }: Props) {
     toast.success(`Teori ${p.nama} tersimpan`);
   };
 
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const displayed = filterKelas ? pesertaList.filter(p => p.kelas === filterKelas) : pesertaList;
 
   if (loading) return <div className="text-center py-8 text-gray-500">Memuat data...</div>;
 
   const header = (
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="text-xl font-bold text-gray-900">Input Nilai {kelas ? `— ${kelas}` : ''}</h2>
+    <div className="space-y-3 mb-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-gray-900">Input Nilai {kelas ? `— ${kelas}` : ''}</h2>
+        {/* Toggle tampilan — hanya muncul di mobile */}
+        <div className="flex md:hidden items-center gap-1 border rounded-lg p-0.5 bg-gray-100">
+          <button onClick={() => setViewMode('card')}
+            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${viewMode === 'card' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}>
+            🃏 Kartu
+          </button>
+          <button onClick={() => setViewMode('table')}
+            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${viewMode === 'table' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}>
+            📊 Tabel
+          </button>
+        </div>
+      </div>
       {!kelas && (
         <div className="flex gap-2">
           {['', 'PUTRA', 'PUTRI'].map(k => (
@@ -156,7 +170,7 @@ export default function InputNilaiClient({ user }: Props) {
       {header}
 
       {/* ══ MOBILE: layout kartu ══ */}
-      <div className="md:hidden space-y-4">
+      <div className={`${viewMode === 'card' ? 'md:hidden' : 'hidden'} space-y-4`}>
         {displayed.map((p, i) => {
           const data = nilaiMap[p.id];
           return (
@@ -241,7 +255,7 @@ export default function InputNilaiClient({ user }: Props) {
       </div>
 
       {/* ══ DESKTOP: layout tabel ══ */}
-      <div className="hidden md:block space-y-6">
+      <div className={`${viewMode === 'table' ? 'block' : 'hidden md:block'} space-y-6`}>
         {/* Tabel Jurus */}
         <div>
           <h3 className="font-semibold text-gray-700 mb-2">📋 Penilaian Jurus</h3>
