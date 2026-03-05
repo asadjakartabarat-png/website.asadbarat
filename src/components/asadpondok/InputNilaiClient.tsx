@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 
 const JURUS_LIST = ['Jurus 1A','Jurus 1B','Jurus 2A','Jurus 2B','Jurus 3A','Jurus 3B','Jurus 4A','Jurus 4B','Jurus 5','Jurus 6','Jurus 7'];
@@ -130,6 +130,7 @@ export default function InputNilaiClient({ user }: Props) {
   };
 
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const debounceTeori = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const displayed = filterKelas ? pesertaList.filter(p => p.kelas === filterKelas) : pesertaList;
 
   if (loading) return <div className="text-center py-8 text-gray-500">Memuat data...</div>;
