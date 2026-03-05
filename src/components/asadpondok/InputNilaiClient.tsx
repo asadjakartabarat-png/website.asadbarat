@@ -30,24 +30,6 @@ export default function InputNilaiClient({ user }: Props) {
 
   const kelas = user.role === 'penguji_sm_putra' ? 'PUTRA' : user.role === 'penguji_sm_putri' ? 'PUTRI' : undefined;
 
-  const buildMap = (peserta: Peserta[], teori: Teori[], allJurus: any[], allTeori: any[]): NilaiMap => {
-    const map: NilaiMap = {};
-    peserta.forEach(p => {
-      const jurus: Record<string, EntryVal> = {};
-      JURUS_LIST.forEach(j => {
-        const f = allJurus.find((n: any) => n.peserta_id === p.id && n.jurus_nama === j);
-        jurus[j] = f ? { id: f.id, nilai: String(f.nilai), created_at: f.created_at } : null;
-      });
-      const teoriRec: Record<number, EntryVal> = {};
-      teori.forEach(t => {
-        const f = allTeori.find((n: any) => n.peserta_id === p.id && n.teori_id === t.id);
-        teoriRec[t.id] = f ? { id: f.id, nilai: String(f.nilai), created_at: f.created_at } : null;
-      });
-      map[p.id] = { jurus, teori: teoriRec, savingJurus: false, savingTeori: false };
-    });
-    return map;
-  };
-
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -61,14 +43,11 @@ export default function InputNilaiClient({ user }: Props) {
       setPesertaList(peserta);
       setTeoriList(teori);
 
-      // Load semua nilai sekaligus
       const allResults = await Promise.all(peserta.map(p => Promise.all([
         fetch(`/api/asadpondok/nilai-jurus?peserta_id=${p.id}&penguji_id=${user.id}`).then(r => r.json()),
         fetch(`/api/asadpondok/nilai-teori?peserta_id=${p.id}&penguji_id=${user.id}`).then(r => r.json()),
       ])));
-      const allJurus = allResults.flatMap(([j]) => (j.nilai || []).map((n: any) => ({ ...n, peserta_id: peserta[allResults.indexOf(allResults.find(r => r === allResults[allResults.indexOf([j, allResults[allResults.indexOf([j, allResults[0][1]]) as any] as any] as any) as any]) as any) as any]?.id })));
 
-      // Simpler: build per peserta
       const jurusAll: any[] = [];
       const teoriAll: any[] = [];
       allResults.forEach(([jData, ntData], idx) => {
@@ -76,7 +55,21 @@ export default function InputNilaiClient({ user }: Props) {
         (ntData.nilai || []).forEach((n: any) => teoriAll.push({ ...n, peserta_id: peserta[idx].id }));
       });
 
-      setNilaiMap(buildMap(peserta, teori, jurusAll, teoriAll));
+      const map: NilaiMap = {};
+      peserta.forEach(p => {
+        const jurus: Record<string, EntryVal> = {};
+        JURUS_LIST.forEach(j => {
+          const f = jurusAll.find(n => n.peserta_id === p.id && n.jurus_nama === j);
+          jurus[j] = f ? { id: f.id, nilai: String(f.nilai), created_at: f.created_at } : null;
+        });
+        const teoriRec: Record<number, EntryVal> = {};
+        teori.forEach(t => {
+          const f = teoriAll.find(n => n.peserta_id === p.id && n.teori_id === t.id);
+          teoriRec[t.id] = f ? { id: f.id, nilai: String(f.nilai), created_at: f.created_at } : null;
+        });
+        map[p.id] = { jurus, teori: teoriRec, savingJurus: false, savingTeori: false };
+      });
+      setNilaiMap(map);
       setLoading(false);
     };
     load();
@@ -140,34 +133,124 @@ export default function InputNilaiClient({ user }: Props) {
 
   if (loading) return <div className="text-center py-8 text-gray-500">Memuat data...</div>;
 
+  const header = (
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="text-xl font-bold text-gray-900">Input Nilai {kelas ? `— ${kelas}` : ''}</h2>
+      {!kelas && (
+        <div className="flex gap-2">
+          {['', 'PUTRA', 'PUTRI'].map(k => (
+            <button key={k} onClick={() => setFilterKelas(k)}
+              className={`px-3 py-1 rounded text-sm ${filterKelas === k ? 'bg-green-600 text-white' : 'border hover:bg-gray-50'}`}>
+              {k || 'Semua'}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  if (displayed.length === 0) return <div>{header}<p className="text-center py-8 text-gray-500">Belum ada peserta</p></div>;
+
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Input Nilai {kelas ? `— ${kelas}` : ''}</h2>
-        {!kelas && (
-          <div className="flex gap-2">
-            {['', 'PUTRA', 'PUTRI'].map(k => (
-              <button key={k} onClick={() => setFilterKelas(k)}
-                className={`px-3 py-1 rounded text-sm ${filterKelas === k ? 'bg-green-600 text-white' : 'border hover:bg-gray-50'}`}>
-                {k || 'Semua'}
-              </button>
-            ))}
-          </div>
-        )}
+    <div className="space-y-6">
+      {header}
+
+      {/* ══ MOBILE: layout kartu ══ */}
+      <div className="md:hidden space-y-4">
+        {displayed.map((p, i) => {
+          const data = nilaiMap[p.id];
+          return (
+            <div key={p.id} className="bg-white rounded-xl border shadow-sm overflow-hidden">
+              {/* Header kartu */}
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400 text-sm">{i + 1}.</span>
+                  <span className="font-semibold text-gray-900">{p.nama}</span>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.kelas === 'PUTRA' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
+                  {p.kelas}
+                </span>
+              </div>
+
+              {/* Jurus */}
+              <div className="px-4 py-3 border-b">
+                <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-3">📋 Jurus</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {JURUS_LIST.map(j => {
+                    const e = data?.jurus[j];
+                    const locked = e?.created_at ? !isEditable(e.created_at) : false;
+                    return (
+                      <div key={j} className="flex items-center gap-2">
+                        <label className="text-sm text-gray-600 w-20 shrink-0">{j}</label>
+                        <div className="flex-1 relative">
+                          <input
+                            type="number" inputMode="decimal" step="0.01" min="0" max="100"
+                            value={e?.nilai ?? ''}
+                            onChange={ev => updateJurus(p.id, j, ev.target.value)}
+                            disabled={locked || data?.savingJurus}
+                            className={`w-full border rounded-lg px-3 py-2 text-sm text-center ${locked ? 'bg-gray-100 text-gray-400' : 'focus:ring-2 focus:ring-green-400 focus:outline-none'}`}
+                            placeholder="0"
+                          />
+                          {locked && <span className="absolute right-2 top-2 text-xs">🔒</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <button onClick={() => simpanJurus(p)} disabled={data?.savingJurus}
+                  className="mt-3 w-full bg-green-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 active:scale-95 transition-transform">
+                  {data?.savingJurus ? 'Menyimpan...' : '💾 Simpan Jurus'}
+                </button>
+              </div>
+
+              {/* Teori */}
+              {teoriList.length > 0 && (
+                <div className="px-4 py-3">
+                  <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-3">📖 Teori</p>
+                  <div className="space-y-2">
+                    {teoriList.map(t => {
+                      const e = data?.teori[t.id];
+                      const locked = e?.created_at ? !isEditable(e.created_at) : false;
+                      return (
+                        <div key={t.id} className="flex items-center gap-2">
+                          <label className="text-sm text-gray-600 flex-1">{t.nama_teori}</label>
+                          <div className="relative w-24 shrink-0">
+                            <input
+                              type="number" inputMode="decimal" step="0.01" min="0" max="100"
+                              value={e?.nilai ?? ''}
+                              onChange={ev => updateTeori(p.id, t.id, ev.target.value)}
+                              disabled={locked || data?.savingTeori}
+                              className={`w-full border rounded-lg px-3 py-2 text-sm text-center ${locked ? 'bg-gray-100 text-gray-400' : 'focus:ring-2 focus:ring-purple-400 focus:outline-none'}`}
+                              placeholder="0"
+                            />
+                            {locked && <span className="absolute right-2 top-2 text-xs">🔒</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <button onClick={() => simpanTeori(p)} disabled={data?.savingTeori}
+                    className="mt-3 w-full bg-purple-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50 active:scale-95 transition-transform">
+                    {data?.savingTeori ? 'Menyimpan...' : '💾 Simpan Teori'}
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      {displayed.length === 0 && <p className="text-center py-8 text-gray-500">Belum ada peserta</p>}
-
-      {/* ── TABEL JURUS ── */}
-      {displayed.length > 0 && (
+      {/* ══ DESKTOP: layout tabel ══ */}
+      <div className="hidden md:block space-y-6">
+        {/* Tabel Jurus */}
         <div>
           <h3 className="font-semibold text-gray-700 mb-2">📋 Penilaian Jurus</h3>
           <div className="overflow-x-auto rounded-lg border bg-white">
             <table className="text-sm border-collapse min-w-max">
               <thead className="bg-green-50">
                 <tr>
-                  <th className="sticky left-0 bg-green-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r">No</th>
-                  <th className="sticky left-8 bg-green-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r min-w-[140px]">Nama</th>
+                  <th className="sticky left-0 bg-green-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r w-10">No</th>
+                  <th className="sticky left-10 bg-green-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r min-w-[150px]">Nama</th>
                   {JURUS_LIST.map(j => (
                     <th key={j} className="px-2 py-2 font-medium text-gray-600 border-b border-r whitespace-nowrap text-center">{j}</th>
                   ))}
@@ -180,7 +263,7 @@ export default function InputNilaiClient({ user }: Props) {
                   return (
                     <tr key={p.id} className="hover:bg-green-50">
                       <td className="sticky left-0 bg-white z-10 px-3 py-2 text-gray-400 border-r">{i + 1}</td>
-                      <td className="sticky left-8 bg-white z-10 px-3 py-2 font-medium border-r whitespace-nowrap">
+                      <td className="sticky left-10 bg-white z-10 px-3 py-2 font-medium border-r whitespace-nowrap">
                         <div>{p.nama}</div>
                         <span className={`text-xs px-1.5 py-0.5 rounded ${p.kelas === 'PUTRA' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{p.kelas}</span>
                       </td>
@@ -213,66 +296,66 @@ export default function InputNilaiClient({ user }: Props) {
             </table>
           </div>
         </div>
-      )}
 
-      {/* ── TABEL TEORI ── */}
-      {displayed.length > 0 && teoriList.length > 0 && (
-        <div>
-          <h3 className="font-semibold text-gray-700 mb-2">📖 Penilaian Teori</h3>
-          <div className="overflow-x-auto rounded-lg border bg-white">
-            <table className="text-sm border-collapse min-w-max">
-              <thead className="bg-purple-50">
-                <tr>
-                  <th className="sticky left-0 bg-purple-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r">No</th>
-                  <th className="sticky left-8 bg-purple-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r min-w-[140px]">Nama</th>
-                  {teoriList.map(t => (
-                    <th key={t.id} className="px-2 py-2 font-medium text-purple-700 border-b border-r whitespace-nowrap text-center max-w-[100px]">
-                      <span className="block truncate max-w-[90px]" title={t.nama_teori}>{t.nama_teori}</span>
-                    </th>
-                  ))}
-                  <th className="px-3 py-2 font-medium text-gray-600 border-b text-center">Simpan</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {displayed.map((p, i) => {
-                  const data = nilaiMap[p.id];
-                  return (
-                    <tr key={p.id} className="hover:bg-purple-50">
-                      <td className="sticky left-0 bg-white z-10 px-3 py-2 text-gray-400 border-r">{i + 1}</td>
-                      <td className="sticky left-8 bg-white z-10 px-3 py-2 font-medium border-r whitespace-nowrap">
-                        <div>{p.nama}</div>
-                        <span className={`text-xs px-1.5 py-0.5 rounded ${p.kelas === 'PUTRA' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{p.kelas}</span>
-                      </td>
-                      {teoriList.map(t => {
-                        const e = data?.teori[t.id];
-                        const locked = e?.created_at ? !isEditable(e.created_at) : false;
-                        return (
-                          <td key={t.id} className="px-1 py-1 border-r text-center">
-                            <input type="number" step="0.01" min="0" max="100"
-                              value={e?.nilai ?? ''}
-                              onChange={ev => updateTeori(p.id, t.id, ev.target.value)}
-                              disabled={locked || data?.savingTeori}
-                              className={`w-16 border rounded px-1 py-1 text-center text-sm ${locked ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'focus:ring-1 focus:ring-purple-400 focus:outline-none'}`}
-                              placeholder="0"
-                            />
-                            {locked && <div className="text-xs text-gray-400">🔒</div>}
-                          </td>
-                        );
-                      })}
-                      <td className="px-2 py-1 text-center">
-                        <button onClick={() => simpanTeori(p)} disabled={data?.savingTeori}
-                          className="bg-purple-600 text-white px-3 py-1.5 rounded text-xs hover:bg-purple-700 disabled:opacity-50">
-                          {data?.savingTeori ? '...' : 'Simpan'}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        {/* Tabel Teori */}
+        {teoriList.length > 0 && (
+          <div>
+            <h3 className="font-semibold text-gray-700 mb-2">📖 Penilaian Teori</h3>
+            <div className="overflow-x-auto rounded-lg border bg-white">
+              <table className="text-sm border-collapse min-w-max">
+                <thead className="bg-purple-50">
+                  <tr>
+                    <th className="sticky left-0 bg-purple-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r w-10">No</th>
+                    <th className="sticky left-10 bg-purple-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r min-w-[150px]">Nama</th>
+                    {teoriList.map(t => (
+                      <th key={t.id} className="px-2 py-2 font-medium text-purple-700 border-b border-r whitespace-nowrap text-center">
+                        <span className="block max-w-[100px] truncate" title={t.nama_teori}>{t.nama_teori}</span>
+                      </th>
+                    ))}
+                    <th className="px-3 py-2 font-medium text-gray-600 border-b text-center">Simpan</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {displayed.map((p, i) => {
+                    const data = nilaiMap[p.id];
+                    return (
+                      <tr key={p.id} className="hover:bg-purple-50">
+                        <td className="sticky left-0 bg-white z-10 px-3 py-2 text-gray-400 border-r">{i + 1}</td>
+                        <td className="sticky left-10 bg-white z-10 px-3 py-2 font-medium border-r whitespace-nowrap">
+                          <div>{p.nama}</div>
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${p.kelas === 'PUTRA' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{p.kelas}</span>
+                        </td>
+                        {teoriList.map(t => {
+                          const e = data?.teori[t.id];
+                          const locked = e?.created_at ? !isEditable(e.created_at) : false;
+                          return (
+                            <td key={t.id} className="px-1 py-1 border-r text-center">
+                              <input type="number" step="0.01" min="0" max="100"
+                                value={e?.nilai ?? ''}
+                                onChange={ev => updateTeori(p.id, t.id, ev.target.value)}
+                                disabled={locked || data?.savingTeori}
+                                className={`w-16 border rounded px-1 py-1 text-center text-sm ${locked ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'focus:ring-1 focus:ring-purple-400 focus:outline-none'}`}
+                                placeholder="0"
+                              />
+                              {locked && <div className="text-xs text-gray-400">🔒</div>}
+                            </td>
+                          );
+                        })}
+                        <td className="px-2 py-1 text-center">
+                          <button onClick={() => simpanTeori(p)} disabled={data?.savingTeori}
+                            className="bg-purple-600 text-white px-3 py-1.5 rounded text-xs hover:bg-purple-700 disabled:opacity-50">
+                            {data?.savingTeori ? '...' : 'Simpan'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <p className="text-xs text-gray-400">🔒 = tidak bisa diedit (lewat 15 menit)</p>
     </div>
