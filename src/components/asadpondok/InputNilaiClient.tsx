@@ -322,8 +322,8 @@ export default function InputNilaiClient({ user }: Props) {
                     <th className="sticky left-0 bg-purple-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r w-10">No</th>
                     <th className="sticky left-10 bg-purple-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r min-w-[150px]">Nama</th>
                     {teoriList.map(t => (
-                      <th key={t.id} className="px-2 py-2 font-medium text-purple-700 border-b border-r whitespace-nowrap text-center">
-                        <span className="block max-w-[100px] truncate" title={t.nama_teori}>{t.nama_teori}</span>
+                      <th key={t.id} className="px-2 py-2 font-medium text-purple-700 border-b border-r text-center min-w-[120px]">
+                        {t.nama_teori}
                       </th>
                     ))}
                     <th className="px-3 py-2 font-medium text-gray-600 border-b text-center">Simpan</th>
