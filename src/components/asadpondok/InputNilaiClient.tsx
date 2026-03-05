@@ -27,6 +27,11 @@ export default function InputNilaiClient({ user }: Props) {
   const [nilaiMap, setNilaiMap] = useState<NilaiMap>({});
   const [loading, setLoading] = useState(true);
   const [filterKelas, setFilterKelas] = useState('');
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const debounceTeori = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const nilaiMapRef = useRef<NilaiMap>({});
+
+  useEffect(() => { nilaiMapRef.current = nilaiMap; }, [nilaiMap]);
 
   const kelas = user.role === 'penguji_sm_putra' ? 'PUTRA' : user.role === 'penguji_sm_putri' ? 'PUTRI' : undefined;
 
@@ -78,8 +83,35 @@ export default function InputNilaiClient({ user }: Props) {
   const updateJurus = (pid: number, j: string, val: string) =>
     setNilaiMap(m => ({ ...m, [pid]: { ...m[pid], jurus: { ...m[pid].jurus, [j]: { ...(m[pid].jurus[j] || { id: 0, created_at: '' }), nilai: val } as EntryVal } } }));
 
-  const updateTeori = (pid: number, tid: number, val: string) =>
+  const updateTeori = (pid: number, tid: number, val: string) => {
     setNilaiMap(m => ({ ...m, [pid]: { ...m[pid], teori: { ...m[pid].teori, [tid]: { ...(m[pid].teori[tid] || { id: 0, created_at: '' }), nilai: val } as EntryVal } } }));
+    const key = `${pid}_${tid}`;
+    clearTimeout(debounceTeori.current[key]);
+    debounceTeori.current[key] = setTimeout(async () => {
+      const nilai = parseFloat(val);
+      if (isNaN(nilai)) return;
+      // Gunakan ref untuk dapat nilai terbaru (hindari stale closure)
+      const existing = nilaiMapRef.current[pid]?.teori[tid];
+      if (existing?.created_at && !isEditable(existing.created_at)) return;
+      const res = await fetch('/api/asadpondok/nilai-teori', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ peserta_id: pid, penguji_id: user.id, teori_id: tid, nilai }),
+      });
+      if (res.ok) {
+        toast.success('Tersimpan otomatis', { id: `teori-${key}`, duration: 1500, icon: '✅' });
+        const ntRes = await fetch(`/api/asadpondok/nilai-teori?peserta_id=${pid}&penguji_id=${user.id}`).then(r => r.json());
+        setNilaiMap(m => {
+          const teoriRec = { ...m[pid].teori };
+          teoriList.forEach(t => {
+            const f = (ntRes.nilai || []).find((n: any) => n.teori_id === t.id);
+            if (f) teoriRec[t.id] = { id: f.id, nilai: String(f.nilai), created_at: f.created_at };
+          });
+          return { ...m, [pid]: { ...m[pid], teori: teoriRec } };
+        });
+      }
+    }, 800);
+  };
 
   const simpanJurus = async (p: Peserta) => {
     const data = nilaiMap[p.id];
@@ -129,8 +161,6 @@ export default function InputNilaiClient({ user }: Props) {
     toast.success(`Teori ${p.nama} tersimpan`);
   };
 
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
-  const debounceTeori = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const displayed = filterKelas ? pesertaList.filter(p => p.kelas === filterKelas) : pesertaList;
 
   if (loading) return <div className="text-center py-8 text-gray-500">Memuat data...</div>;
