@@ -311,64 +311,58 @@ export default function InputNilaiClient({ user }: Props) {
           </div>
         </div>
 
-        {/* Tabel Teori - vertikal */}
+        {/* Tabel Teori */}
         {teoriList.length > 0 && (
           <div>
             <h3 className="font-semibold text-gray-700 mb-2">📖 Penilaian Teori</h3>
             <div className="overflow-x-auto rounded-lg border bg-white">
-              <table className="text-sm border-collapse w-full">
+              <table className="text-sm border-collapse min-w-max">
                 <thead className="bg-purple-50">
                   <tr>
                     <th className="sticky left-0 bg-purple-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r w-10">No</th>
                     <th className="sticky left-10 bg-purple-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r min-w-[150px]">Nama</th>
-                    <th className="px-3 py-2 font-medium text-gray-500 border-b border-r w-10 text-center">#</th>
-                    <th className="px-3 py-2 font-medium text-purple-700 border-b border-r min-w-[200px]">Nama Teori</th>
-                    <th className="px-3 py-2 font-medium text-purple-700 border-b border-r w-28 text-center">Nilai</th>
-                    <th className="px-3 py-2 font-medium text-gray-600 border-b w-24 text-center">Aksi</th>
+                    {teoriList.map(t => (
+                      <th key={t.id} className="px-2 py-2 font-medium text-purple-700 border-b border-r text-center min-w-[120px]">
+                        {t.nama_teori}
+                      </th>
+                    ))}
+                    <th className="px-3 py-2 font-medium text-gray-600 border-b text-center">Simpan</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y">
                   {displayed.map((p, i) => {
                     const data = nilaiMap[p.id];
-                    return teoriList.map((t, ti) => {
-                      const e = data?.teori[t.id];
-                      const locked = e?.created_at ? !isEditable(e.created_at) : false;
-                      const isFirst = ti === 0;
-                      const isLast = ti === teoriList.length - 1;
-                      return (
-                        <tr key={`${p.id}-${t.id}`} className={`${isFirst ? 'border-t-2 border-gray-300' : ''} hover:bg-purple-50`}>
-                          {isFirst && (
-                            <>
-                              <td className="sticky left-0 bg-white z-10 px-3 py-2 text-gray-400 border-r align-top" rowSpan={teoriList.length}>{i + 1}</td>
-                              <td className="sticky left-10 bg-white z-10 px-3 py-2 font-medium border-r align-top" rowSpan={teoriList.length}>
-                                <div>{p.nama}</div>
-                                <span className={`text-xs px-1.5 py-0.5 rounded ${p.kelas === 'PUTRA' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{p.kelas}</span>
-                              </td>
-                            </>
-                          )}
-                          <td className="px-3 py-2 text-gray-400 border-r text-center">{t.urutan}</td>
-                          <td className="px-3 py-2 border-r">{t.nama_teori}</td>
-                          <td className="px-2 py-1 border-r text-center">
-                            <input type="number" step="0.01" min="0" max="100"
-                              value={e?.nilai ?? ''}
-                              onChange={ev => updateTeori(p.id, t.id, ev.target.value)}
-                              disabled={locked || data?.savingTeori}
-                              className={`w-20 border rounded px-2 py-1 text-center text-sm ${locked ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'focus:ring-1 focus:ring-purple-400 focus:outline-none'}`}
-                              placeholder="0"
-                            />
-                            {locked && <div className="text-xs text-gray-400">🔒</div>}
-                          </td>
-                          <td className="px-2 py-1 text-center">
-                            {isLast && (
-                              <button onClick={() => simpanTeori(p)} disabled={data?.savingTeori}
-                                className="bg-purple-600 text-white px-3 py-1.5 rounded text-xs hover:bg-purple-700 disabled:opacity-50">
-                                {data?.savingTeori ? '...' : 'Simpan'}
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    });
+                    return (
+                      <tr key={p.id} className="hover:bg-purple-50">
+                        <td className="sticky left-0 bg-white z-10 px-3 py-2 text-gray-400 border-r">{i + 1}</td>
+                        <td className="sticky left-10 bg-white z-10 px-3 py-2 font-medium border-r whitespace-nowrap">
+                          <div>{p.nama}</div>
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${p.kelas === 'PUTRA' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{p.kelas}</span>
+                        </td>
+                        {teoriList.map(t => {
+                          const e = data?.teori[t.id];
+                          const locked = e?.created_at ? !isEditable(e.created_at) : false;
+                          return (
+                            <td key={t.id} className="px-1 py-1 border-r text-center">
+                              <input type="number" step="0.01" min="0" max="100"
+                                value={e?.nilai ?? ''}
+                                onChange={ev => updateTeori(p.id, t.id, ev.target.value)}
+                                disabled={locked || data?.savingTeori}
+                                className={`w-16 border rounded px-1 py-1 text-center text-sm ${locked ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'focus:ring-1 focus:ring-purple-400 focus:outline-none'}`}
+                                placeholder="0"
+                              />
+                              {locked && <div className="text-xs text-gray-400">🔒</div>}
+                            </td>
+                          );
+                        })}
+                        <td className="px-2 py-1 text-center">
+                          <button onClick={() => simpanTeori(p)} disabled={data?.savingTeori}
+                            className="bg-purple-600 text-white px-3 py-1.5 rounded text-xs hover:bg-purple-700 disabled:opacity-50">
+                            {data?.savingTeori ? '...' : 'Simpan'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
                   })}
                 </tbody>
               </table>
