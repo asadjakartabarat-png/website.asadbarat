@@ -3,13 +3,11 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-type Role = 'superadmin' | 'korda' | 'penguji_sm_putra' | 'penguji_sm_putri';
-
-interface User { id: number; username: string; full_name: string; role: Role; }
+interface User { id: number; username: string; full_name: string; role: string; }
 
 interface NavItem { key: string; label: string; icon: string; }
 
-function getNavItems(role: Role): NavItem[] {
+function getNavItems(role: string): NavItem[] {
   const items: NavItem[] = [{ key: 'dashboard', label: 'Dashboard', icon: '🏠' }];
   if (['superadmin', 'korda'].includes(role)) {
     items.push({ key: 'peserta', label: 'Peserta Tes', icon: '👥' });
@@ -25,8 +23,8 @@ function getNavItems(role: Role): NavItem[] {
   return items;
 }
 
-function roleLabel(role: Role) {
-  const map: Record<Role, string> = {
+function roleLabel(role: string) {
+  const map: Record<string, string> = {
     superadmin: 'Super Admin',
     korda: 'Koordinator',
     penguji_sm_putra: 'Penguji PUTRA',
