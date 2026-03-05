@@ -21,6 +21,12 @@ export async function middleware(req: NextRequest) {
     if (!session) return NextResponse.redirect(new URL('/absensi/login', req.url));
   }
 
+  // Proteksi route asadpondok
+  if (pathname.startsWith('/asadpondok') && pathname !== '/asadpondok/login') {
+    const session = req.cookies.get('asadpondok_session')?.value;
+    if (!session) return NextResponse.redirect(new URL('/asadpondok/login', req.url));
+  }
+
   if (!pathname.startsWith('/admin')) return NextResponse.next();
 
   if (pathname === '/admin/login') {
@@ -48,5 +54,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/absensi/:path*', '/pasanggiri/:path*'],
+  matcher: ['/admin/:path*', '/absensi/:path*', '/pasanggiri/:path*', '/asadpondok/:path*'],
 };
