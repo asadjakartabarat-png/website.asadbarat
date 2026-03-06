@@ -208,6 +208,14 @@ export default function InputNilaiClient({ user }: Props) {
           </button>
         </div>
       </div>
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex gap-2 text-xs bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+          <span className="font-semibold text-amber-800">Ket:</span>
+          <span className="text-amber-700">Kurang (K) = 5–6</span>
+          <span className="text-amber-700">Cukup (C) = 7–8</span>
+          <span className="text-amber-700">Baik (B) = 9–10</span>
+        </div>
+      </div>
       {!kelas && (
         <div className="flex gap-2">
           {['', 'PUTRA', 'PUTRI'].map(k => (
