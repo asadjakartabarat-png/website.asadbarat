@@ -14,10 +14,13 @@ type NilaiMap = Record<number, {
   savingJurus: boolean;
   savingTeori: boolean;
 }>;
+// unlockMap[peserta_id][penguji_id] = unlocked_until ISO string
+type UnlockMap = Record<number, Record<number, string>>;
 
-interface Props { user: { id: number; role: string; }; }
+interface Props { user: { id: number; role: string; username?: string }; }
 
-function isEditable(createdAt: string) {
+function isEditable(createdAt: string, unlockUntil?: string) {
+  if (unlockUntil && new Date(unlockUntil).getTime() > Date.now()) return true;
   return Date.now() - new Date(createdAt).getTime() <= 15 * 60 * 1000;
 }
 
@@ -25,6 +28,8 @@ export default function InputNilaiClient({ user }: Props) {
   const [pesertaList, setPesertaList] = useState<Peserta[]>([]);
   const [teoriList, setTeoriList] = useState<Teori[]>([]);
   const [nilaiMap, setNilaiMap] = useState<NilaiMap>({});
+  const [unlockMap, setUnlockMap] = useState<UnlockMap>({});
+  const [unlockingId, setUnlockingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filterKelas, setFilterKelas] = useState('');
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
@@ -76,10 +81,40 @@ export default function InputNilaiClient({ user }: Props) {
         map[p.id] = { jurus, teori: teoriRec, savingJurus: false, savingTeori: false };
       });
       setNilaiMap(map);
+
+      // Load unlock overrides untuk semua peserta
+      const pengujiIds = peserta.map(p => p.id);
+      const unlockRes = await fetch(`/api/asadpondok/unlock-override?penguji_id=${user.id}`);
+      const unlockData = await unlockRes.json();
+      const uMap: UnlockMap = {};
+      (unlockData.overrides || []).forEach((o: any) => {
+        if (!uMap[o.peserta_id]) uMap[o.peserta_id] = {};
+        uMap[o.peserta_id][o.penguji_id] = o.unlocked_until;
+      });
+      setUnlockMap(uMap);
+
       setLoading(false);
     };
     load();
   }, [kelas, user.id]);
+
+  const handleUnlock = async (pesertaId: number, pengujiId: number) => {
+    const key = `${pesertaId}_${pengujiId}`;
+    setUnlockingId(key);
+    const res = await fetch('/api/asadpondok/unlock-override', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ peserta_id: pesertaId, penguji_id: pengujiId }),
+    });
+    if (res.ok) {
+      const unlocked_until = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      setUnlockMap(m => ({ ...m, [pesertaId]: { ...(m[pesertaId] || {}), [pengujiId]: unlocked_until } }));
+      toast.success('Nilai dibuka kembali selama 15 menit');
+    } else {
+      toast.error('Gagal membuka kunci');
+    }
+    setUnlockingId(null);
+  };
 
   const updateJurus = (pid: number, j: string, val: string) => {
     setNilaiMap(m => ({ ...m, [pid]: { ...m[pid], jurus: { ...m[pid].jurus, [j]: { ...(m[pid].jurus[j] || { id: 0, created_at: '' }), nilai: val } as EntryVal } } }));
@@ -89,7 +124,8 @@ export default function InputNilaiClient({ user }: Props) {
       const nilai = parseFloat(val);
       if (isNaN(nilai)) return;
       const existing = nilaiMapRef.current[pid]?.jurus[j];
-      if (existing?.created_at && !isEditable(existing.created_at)) return;
+      const unlockUntil = unlockMap[pid]?.[user.id];
+      if (existing?.created_at && !isEditable(existing.created_at, unlockUntil)) return;
       const res = await fetch('/api/asadpondok/nilai-jurus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,7 +155,8 @@ export default function InputNilaiClient({ user }: Props) {
       if (isNaN(nilai)) return;
       // Gunakan ref untuk dapat nilai terbaru (hindari stale closure)
       const existing = nilaiMapRef.current[pid]?.teori[tid];
-      if (existing?.created_at && !isEditable(existing.created_at)) return;
+      const unlockUntil = unlockMap[pid]?.[user.id];
+      if (existing?.created_at && !isEditable(existing.created_at, unlockUntil)) return;
       const res = await fetch('/api/asadpondok/nilai-teori', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -147,7 +184,8 @@ export default function InputNilaiClient({ user }: Props) {
       const e = data.jurus[j];
       const nilai = parseFloat(e?.nilai || '');
       if (isNaN(nilai)) return null;
-      if (e?.created_at && !isEditable(e.created_at)) return null;
+      const unlockUntil = unlockMap[p.id]?.[user.id];
+      if (e?.created_at && !isEditable(e.created_at, unlockUntil)) return null;
       return { jurus_nama: j, nilai };
     }).filter(Boolean);
     await Promise.all(payloads.map(p2 => fetch('/api/asadpondok/nilai-jurus', {
@@ -171,7 +209,8 @@ export default function InputNilaiClient({ user }: Props) {
       const e = data.teori[t.id];
       const nilai = parseFloat(e?.nilai || '');
       if (isNaN(nilai)) return null;
-      if (e?.created_at && !isEditable(e.created_at)) return null;
+      const unlockUntil = unlockMap[p.id]?.[user.id];
+      if (e?.created_at && !isEditable(e.created_at, unlockUntil)) return null;
       return { teori_id: t.id, nilai };
     }).filter(Boolean);
     await Promise.all(payloads.map(p2 => fetch('/api/asadpondok/nilai-teori', {
@@ -239,6 +278,11 @@ export default function InputNilaiClient({ user }: Props) {
       <div className={`${viewMode === 'card' ? 'md:hidden' : 'hidden'} space-y-4`}>
         {displayed.map((p, i) => {
           const data = nilaiMap[p.id];
+          const unlockUntil = unlockMap[p.id]?.[user.id];
+          const allJurusLocked = JURUS_LIST.every(j => {
+            const e = data?.jurus[j];
+            return e?.created_at ? !isEditable(e.created_at, unlockUntil) : false;
+          });
           return (
             <div key={p.id} className="bg-white rounded-xl border shadow-sm overflow-hidden">
               {/* Header kartu */}
@@ -247,9 +291,21 @@ export default function InputNilaiClient({ user }: Props) {
                   <span className="text-gray-400 text-sm">{i + 1}.</span>
                   <span className="font-semibold text-gray-900">{p.nama}</span>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.kelas === 'PUTRA' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
-                  {p.kelas}
-                </span>
+                <div className="flex items-center gap-2">
+                  {user.role === 'superadmin' && allJurusLocked && (
+                    <button
+                      onClick={() => handleUnlock(p.id, user.id)}
+                      disabled={unlockingId === `${p.id}_${user.id}`}
+                      className="text-xs px-2 py-1 rounded bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300 disabled:opacity-50"
+                      title="Buka kunci edit nilai"
+                    >
+                      {unlockingId === `${p.id}_${user.id}` ? '...' : '🔓 Buka'}
+                    </button>
+                  )}
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.kelas === 'PUTRA' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
+                    {p.kelas}
+                  </span>
+                </div>
               </div>
 
               {/* Jurus */}
@@ -258,7 +314,7 @@ export default function InputNilaiClient({ user }: Props) {
                 <div className="grid grid-cols-2 gap-2">
                   {JURUS_LIST.map(j => {
                     const e = data?.jurus[j];
-                    const locked = e?.created_at ? !isEditable(e.created_at) : false;
+                    const locked = e?.created_at ? !isEditable(e.created_at, unlockUntil) : false;
                     return (
                       <div key={j} className="flex items-center gap-2">
                         <label className="text-sm text-gray-600 w-20 shrink-0">{j}</label>
@@ -290,7 +346,7 @@ export default function InputNilaiClient({ user }: Props) {
                   <div className="space-y-2">
                     {teoriList.map(t => {
                       const e = data?.teori[t.id];
-                      const locked = e?.created_at ? !isEditable(e.created_at) : false;
+                      const locked = e?.created_at ? !isEditable(e.created_at, unlockUntil) : false;
                       return (
                         <div key={t.id} className="flex items-center gap-2">
                           <label className="text-sm text-gray-600 flex-1">{t.nama_teori}</label>
@@ -340,16 +396,32 @@ export default function InputNilaiClient({ user }: Props) {
               <tbody className="divide-y">
                 {displayed.map((p, i) => {
                   const data = nilaiMap[p.id];
+                  const unlockUntil = unlockMap[p.id]?.[user.id];
+                  const allJurusLocked = JURUS_LIST.every(j => {
+                    const e = data?.jurus[j];
+                    return e?.created_at ? !isEditable(e.created_at, unlockUntil) : false;
+                  });
                   return (
                     <tr key={p.id} className="hover:bg-green-50">
                       <td className="sticky left-0 bg-white z-10 px-3 py-2 text-gray-400 border-r">{i + 1}</td>
                       <td className="sticky left-10 bg-white z-10 px-3 py-2 font-medium border-r whitespace-nowrap">
                         <div>{p.nama}</div>
-                        <span className={`text-xs px-1.5 py-0.5 rounded ${p.kelas === 'PUTRA' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{p.kelas}</span>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${p.kelas === 'PUTRA' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{p.kelas}</span>
+                          {user.role === 'superadmin' && allJurusLocked && (
+                            <button
+                              onClick={() => handleUnlock(p.id, user.id)}
+                              disabled={unlockingId === `${p.id}_${user.id}`}
+                              className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300 disabled:opacity-50"
+                            >
+                              {unlockingId === `${p.id}_${user.id}` ? '...' : '🔓'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                       {JURUS_LIST.map(j => {
                         const e = data?.jurus[j];
-                        const locked = e?.created_at ? !isEditable(e.created_at) : false;
+                        const locked = e?.created_at ? !isEditable(e.created_at, unlockUntil) : false;
                         return (
                           <td key={j} className="px-1 py-1 border-r text-center">
                             <input type="number" step="0.01" min="0" max="100"
@@ -398,6 +470,7 @@ export default function InputNilaiClient({ user }: Props) {
                 <tbody className="divide-y">
                   {displayed.map((p, i) => {
                     const data = nilaiMap[p.id];
+                    const unlockUntil = unlockMap[p.id]?.[user.id];
                     return (
                       <tr key={p.id} className="hover:bg-purple-50">
                         <td className="sticky left-0 bg-white z-10 px-3 py-2 text-gray-400 border-r">{i + 1}</td>
@@ -407,7 +480,7 @@ export default function InputNilaiClient({ user }: Props) {
                         </td>
                         {teoriList.map(t => {
                           const e = data?.teori[t.id];
-                          const locked = e?.created_at ? !isEditable(e.created_at) : false;
+                          const locked = e?.created_at ? !isEditable(e.created_at, unlockUntil) : false;
                           return (
                             <td key={t.id} className="px-1 py-1 border-r text-center">
                               <input type="number" step="0.01" min="0" max="100"
