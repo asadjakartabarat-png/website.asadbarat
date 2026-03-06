@@ -100,3 +100,17 @@ CREATE TABLE IF NOT EXISTS subscribers (
   email TEXT UNIQUE NOT NULL,
   created_at TEXT NOT NULL
 );
+
+-- ============================================================
+-- TABEL PONDOK UNLOCK OVERRIDE
+-- Jalankan di Turso Web Console → Shell
+-- ============================================================
+CREATE TABLE IF NOT EXISTS pondok_unlock_override (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  peserta_id INTEGER NOT NULL REFERENCES pondok_peserta(id) ON DELETE CASCADE,
+  penguji_id INTEGER NOT NULL REFERENCES pondok_users(id) ON DELETE CASCADE,
+  unlocked_until TEXT NOT NULL,
+  unlocked_by TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  UNIQUE(peserta_id, penguji_id)
+);
