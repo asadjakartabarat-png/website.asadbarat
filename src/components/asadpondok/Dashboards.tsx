@@ -52,6 +52,15 @@ export function KordaDashboard({ user }: { user: User }) {
   );
 }
 
+const KeteranganNilai = () => (
+  <div className="mt-4 inline-flex gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 text-sm">
+    <span className="font-semibold text-amber-800">Ket:</span>
+    <span className="text-amber-700">Kurang (K) = 5–6</span>
+    <span className="text-amber-700">Cukup (C) = 7–8</span>
+    <span className="text-amber-700">Baik (B) = 9–10</span>
+  </div>
+);
+
 export function PengujiDashboard({ user }: { user: User }) {
   const router = useRouter();
   const kelas = user.role === 'penguji_sm_putra' ? 'PUTRA' : 'PUTRI';
@@ -65,6 +74,7 @@ export function PengujiDashboard({ user }: { user: User }) {
         <div className="font-medium">Mulai Input Nilai {kelas}</div>
         <div className="text-sm text-green-200 mt-1">Klik untuk memilih peserta</div>
       </button>
+      <KeteranganNilai />
     </div>
   );
 }
