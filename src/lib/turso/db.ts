@@ -984,6 +984,29 @@ export async function getPondokNilaiTeoriByPesertaPenguji(pesertaId: number, pen
   return result.rows;
 }
 
+// ─── PONDOK UNLOCK OVERRIDE ──────────────────────────────────────────────────
+
+export async function upsertPondokUnlockOverride(data: { peserta_id: number; penguji_id: number; unlocked_by: string }) {
+  const now = new Date().toISOString();
+  const unlocked_until = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+  await turso.execute({
+    sql: `INSERT INTO pondok_unlock_override (peserta_id, penguji_id, unlocked_until, unlocked_by, created_at)
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(peserta_id, penguji_id) DO UPDATE SET unlocked_until=excluded.unlocked_until, unlocked_by=excluded.unlocked_by, created_at=excluded.created_at`,
+    args: [data.peserta_id, data.penguji_id, unlocked_until, data.unlocked_by, now],
+  });
+}
+
+export async function getPondokUnlockOverride(peserta_id?: number, penguji_id?: number) {
+  const where: string[] = [];
+  const args: any[] = [];
+  if (peserta_id) { where.push('peserta_id = ?'); args.push(peserta_id); }
+  if (penguji_id) { where.push('penguji_id = ?'); args.push(penguji_id); }
+  const sql = `SELECT * FROM pondok_unlock_override${where.length ? ' WHERE ' + where.join(' AND ') : ''}`;
+  const result = await turso.execute({ sql, args });
+  return result.rows;
+}
+
 // ─── PONDOK HASIL ─────────────────────────────────────────────────────────────
 
 export async function getPondokHasil(kelas?: string) {
