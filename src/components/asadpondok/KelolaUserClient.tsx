@@ -47,8 +47,11 @@ export default function KelolaUserClient() {
   };
 
   const toggleActive = async (u: PondokUser) => {
+    const action = u.is_active ? 'disable' : 'enable';
+    if (!confirm(`${action === 'disable' ? 'Nonaktifkan' : 'Aktifkan'} user "${u.full_name}"?`)) return;
     await fetch(`/api/asadpondok/users/${u.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_active: u.is_active ? 0 : 1 }) });
-    toast.success('Status diperbarui'); load();
+    toast.success(`User ${action === 'disable' ? 'dinonaktifkan' : 'diaktifkan'}`);
+    load();
   };
 
   const handleDelete = async (id: number) => {
@@ -117,13 +120,19 @@ export default function KelolaUserClient() {
                   <td className="px-4 py-3 text-gray-600">{u.username}</td>
                   <td className="px-4 py-3"><span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs">{ROLE_LABELS[u.role]}</span></td>
                   <td className="px-4 py-3">
-                    <button onClick={() => toggleActive(u)} className={`px-2 py-0.5 rounded text-xs ${u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                       {u.is_active ? 'Aktif' : 'Nonaktif'}
-                    </button>
+                    </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-2 justify-end">
+                    <div className="flex gap-2 justify-end items-center">
                       <button onClick={() => openEdit(u)} className="text-blue-600 hover:underline text-xs">Edit</button>
+                      <button
+                        onClick={() => toggleActive(u)}
+                        className={`text-xs px-2 py-1 rounded border ${u.is_active ? 'border-orange-300 text-orange-600 hover:bg-orange-50' : 'border-green-300 text-green-600 hover:bg-green-50'}`}
+                      >
+                        {u.is_active ? 'Disable' : 'Enable'}
+                      </button>
                       <button onClick={() => handleDelete(u.id)} className="text-red-600 hover:underline text-xs">Hapus</button>
                     </div>
                   </td>
