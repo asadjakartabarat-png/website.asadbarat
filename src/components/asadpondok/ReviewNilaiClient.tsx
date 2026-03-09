@@ -182,38 +182,48 @@ export default function ReviewNilaiClient() {
               <table className="text-sm border-collapse min-w-max w-full">
                 <thead className="bg-purple-50">
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium text-gray-600 border-b border-r w-8">No</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-600 border-b border-r min-w-[140px]">Nama</th>
-                    {teoriList.map(t => (
-                      <th key={t.id} className="px-2 py-2 text-xs font-medium text-gray-500 border-b border-r text-center min-w-[100px]">{t.nama_teori}</th>
+                    <th className="sticky left-0 bg-purple-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r min-w-[160px]">Nama Teori</th>
+                    {displayed.map(p => (
+                      <th key={p.id} className="px-2 py-2 text-xs font-medium text-gray-600 border-b border-r text-center min-w-[90px] whitespace-nowrap">{p.nama}</th>
                     ))}
-                    <th className="px-2 py-2 text-xs font-semibold text-purple-700 border-b border-r text-center bg-purple-50">Total</th>
-                    <th className="px-2 py-2 text-xs font-medium text-gray-500 border-b text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {displayed.map((p, i) => {
-                    const total = getTotalTeori(p.id, activePenguji.id);
-                    const hasAny = nilaiTeori.some(n => n.peserta_id === p.id && n.penguji_id === activePenguji.id);
-                    return (
-                      <tr key={p.id} className="hover:bg-purple-50">
-                        <td className="px-3 py-2 text-gray-400 border-r text-center">{i + 1}</td>
-                        <td className="px-3 py-2 font-medium border-r whitespace-nowrap">{p.nama}</td>
-                        {teoriList.map(t => {
-                          const val = getNilaiTeori(p.id, activePenguji.id, t.id);
-                          return (
-                            <td key={t.id} className="px-2 py-2 border-r text-center">
-                              {val !== null ? <span className="font-medium text-gray-800">{val}</span> : <span className="text-gray-300">—</span>}
-                            </td>
-                          );
-                        })}
-                        <td className="px-2 py-2 border-r text-center font-bold text-purple-700 bg-purple-50">
+                  {teoriList.map(t => (
+                    <tr key={t.id} className="hover:bg-purple-50">
+                      <td className="sticky left-0 bg-white z-10 px-3 py-2 font-medium text-gray-700 border-r whitespace-nowrap">{t.nama_teori}</td>
+                      {displayed.map(p => {
+                        const val = getNilaiTeori(p.id, activePenguji.id, t.id);
+                        return (
+                          <td key={p.id} className="px-2 py-2 border-r text-center">
+                            {val !== null ? <span className="font-medium text-gray-800">{val}</span> : <span className="text-gray-300">—</span>}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  <tr className="bg-purple-50 font-bold">
+                    <td className="sticky left-0 bg-purple-50 z-10 px-3 py-2 text-purple-700 border-r">Total</td>
+                    {displayed.map(p => {
+                      const total = getTotalTeori(p.id, activePenguji.id);
+                      return (
+                        <td key={p.id} className="px-2 py-2 border-r text-center text-purple-700">
                           {total !== null ? total.toFixed(1) : <span className="text-gray-300">—</span>}
                         </td>
-                        <td className="px-2 py-2 text-center">{statusBadge(isTeoriLengkap(p.id, activePenguji.id), hasAny)}</td>
-                      </tr>
-                    );
-                  })}
+                      );
+                    })}
+                  </tr>
+                  <tr>
+                    <td className="sticky left-0 bg-white z-10 px-3 py-2 text-gray-500 border-r text-sm">Status</td>
+                    {displayed.map(p => {
+                      const hasAny = nilaiTeori.some(n => n.peserta_id === p.id && n.penguji_id === activePenguji.id);
+                      return (
+                        <td key={p.id} className="px-2 py-2 border-r text-center">
+                          {statusBadge(isTeoriLengkap(p.id, activePenguji.id), hasAny)}
+                        </td>
+                      );
+                    })}
+                  </tr>
                 </tbody>
               </table>
             </div>
