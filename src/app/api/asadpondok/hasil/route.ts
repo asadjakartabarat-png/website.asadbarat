@@ -70,8 +70,7 @@ export async function GET(request: NextRequest) {
       for (const pengujiId of pengujiKelas) {
         const key = `${pid}_${pengujiId}`;
         const jurusDone = totalJurusItems === 0 || (jurusMap[key] || 0) >= totalJurusItems;
-        const teoriDone = totalTeoriItems === 0 || (teoriMap[key] || 0) >= totalTeoriItems;
-        if (jurusDone && teoriDone) done++;
+        if (jurusDone) done++;
       }
       statusMap[pid] = { lengkap: done === pengujiTotal, pengujiDone: done, pengujiTotal };
     });
