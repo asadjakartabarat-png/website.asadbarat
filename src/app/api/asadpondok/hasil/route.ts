@@ -10,8 +10,6 @@ function getSession() {
   return s ? JSON.parse(s) : null;
 }
 
-const JURUS_LIST = ['Jurus 1A','Jurus 1B','Jurus 2A','Jurus 2B','Jurus 3A','Jurus 3B','Jurus 4A','Jurus 4B','Jurus 5','Jurus 6','Jurus 7'];
-
 export async function GET(request: NextRequest) {
   const session = getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -19,9 +17,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const kelas = request.nextUrl.searchParams.get('kelas') || undefined;
-  const [hasil, teoriList] = await Promise.all([getPondokHasil(kelas), getAllPondokTeori()]);
+  const [hasil, teoriList, jurusDistinctRes] = await Promise.all([
+    getPondokHasil(kelas),
+    getAllPondokTeori(),
+    turso.execute({ sql: `SELECT DISTINCT jurus_nama FROM pondok_nilai_jurus`, args: [] }),
+  ]);
   const totalTeoriItems = teoriList.length;
-  const totalJurusItems = JURUS_LIST.length;
+  const totalJurusItems = jurusDistinctRes.rows.length;
 
   // Ambil semua penguji aktif sekaligus
   const pengujiRes = await turso.execute({
