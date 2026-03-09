@@ -1021,9 +1021,19 @@ export async function getPondokHasil(kelas?: string) {
             COUNT(DISTINCT CASE WHEN nt.penguji_id IS NOT NULL THEN nt.penguji_id END) as penguji_teori_count
           FROM pondok_peserta p
           LEFT JOIN pondok_nilai_jurus nj ON p.id = nj.peserta_id
-            AND nj.penguji_id IN (SELECT id FROM pondok_users WHERE is_active = 1)
+            AND nj.penguji_id IN (
+              SELECT id FROM pondok_users WHERE is_active = 1 AND (
+                (p.kelas = 'PUTRA' AND role = 'penguji_sm_putra') OR
+                (p.kelas = 'PUTRI' AND role = 'penguji_sm_putri')
+              )
+            )
           LEFT JOIN pondok_nilai_teori nt ON p.id = nt.peserta_id
-            AND nt.penguji_id IN (SELECT id FROM pondok_users WHERE is_active = 1)
+            AND nt.penguji_id IN (
+              SELECT id FROM pondok_users WHERE is_active = 1 AND (
+                (p.kelas = 'PUTRA' AND role = 'penguji_sm_putra') OR
+                (p.kelas = 'PUTRI' AND role = 'penguji_sm_putri')
+              )
+            )
           WHERE 1=1 ${kelasFilter}
           GROUP BY p.id, p.nama, p.kelas
           ORDER BY p.kelas, total_nilai DESC`,
