@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getPondokNilaiJurus, getPondokNilaiTeori, getAllPondokPeserta, getAllPondokTeori, getAllPondokUsers } from '@/lib/turso/db';
+import { getPondokNilaiJurus, getPondokNilaiTeori, getAllPondokPeserta, getAllPondokTeori } from '@/lib/turso/db';
+import { turso } from '@/lib/turso/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,17 +17,15 @@ export async function GET(request: NextRequest) {
 
   const kelas = request.nextUrl.searchParams.get('kelas') || undefined;
 
-  const [pesertaAll, teoriList, usersAll, nilaiJurusAll, nilaiTeoriAll] = await Promise.all([
+  const [pesertaAll, teoriList, pengujiRes, nilaiJurusAll, nilaiTeoriAll] = await Promise.all([
     getAllPondokPeserta(kelas),
     getAllPondokTeori(),
-    getAllPondokUsers(),
+    turso.execute({ sql: `SELECT id, username, full_name, role FROM pondok_users WHERE is_active = 1 AND role IN ('penguji_sm_putra', 'penguji_sm_putri')`, args: [] }),
     getPondokNilaiJurus(),
     getPondokNilaiTeori(),
   ]);
 
-  const pengujiList = (usersAll as any[]).filter(u =>
-    u.role === 'penguji_sm_putra' || u.role === 'penguji_sm_putri'
-  );
+  const pengujiList = pengujiRes.rows;
 
   return NextResponse.json({ peserta: pesertaAll, teori: teoriList, penguji: pengujiList, nilaiJurus: nilaiJurusAll, nilaiTeori: nilaiTeoriAll });
 }
