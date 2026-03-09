@@ -1014,28 +1014,27 @@ export async function getPondokHasil(kelas?: string) {
   const result = await turso.execute({
     sql: `SELECT
             p.id, p.nama, p.kelas,
-            COALESCE(SUM(nj.nilai), 0) as total_jurus,
-            COALESCE(SUM(nt.nilai), 0) as total_teori,
-            COALESCE(SUM(nj.nilai), 0) + COALESCE(SUM(nt.nilai), 0) as total_nilai,
-            COUNT(DISTINCT CASE WHEN nj.penguji_id IS NOT NULL THEN nj.penguji_id END) as penguji_jurus_count,
-            COUNT(DISTINCT CASE WHEN nt.penguji_id IS NOT NULL THEN nt.penguji_id END) as penguji_teori_count
+            COALESCE(jurus.total_jurus, 0) as total_jurus,
+            COALESCE(teori.total_teori, 0) as total_teori,
+            COALESCE(jurus.total_jurus, 0) + COALESCE(teori.total_teori, 0) as total_nilai
           FROM pondok_peserta p
-          LEFT JOIN pondok_nilai_jurus nj ON p.id = nj.peserta_id
-            AND nj.penguji_id IN (
-              SELECT id FROM pondok_users WHERE is_active = 1 AND (
-                (p.kelas = 'PUTRA' AND role = 'penguji_sm_putra') OR
-                (p.kelas = 'PUTRI' AND role = 'penguji_sm_putri')
-              )
-            )
-          LEFT JOIN pondok_nilai_teori nt ON p.id = nt.peserta_id
-            AND nt.penguji_id IN (
-              SELECT id FROM pondok_users WHERE is_active = 1 AND (
-                (p.kelas = 'PUTRA' AND role = 'penguji_sm_putra') OR
-                (p.kelas = 'PUTRI' AND role = 'penguji_sm_putri')
-              )
-            )
+          LEFT JOIN (
+            SELECT nj.peserta_id, SUM(nj.nilai) as total_jurus
+            FROM pondok_nilai_jurus nj
+            JOIN pondok_peserta pp ON pp.id = nj.peserta_id
+            JOIN pondok_users pu ON pu.id = nj.penguji_id AND pu.is_active = 1
+              AND ((pp.kelas = 'PUTRA' AND pu.role = 'penguji_sm_putra') OR (pp.kelas = 'PUTRI' AND pu.role = 'penguji_sm_putri'))
+            GROUP BY nj.peserta_id
+          ) jurus ON p.id = jurus.peserta_id
+          LEFT JOIN (
+            SELECT nt.peserta_id, SUM(nt.nilai) as total_teori
+            FROM pondok_nilai_teori nt
+            JOIN pondok_peserta pp ON pp.id = nt.peserta_id
+            JOIN pondok_users pu ON pu.id = nt.penguji_id AND pu.is_active = 1
+              AND ((pp.kelas = 'PUTRA' AND pu.role = 'penguji_sm_putra') OR (pp.kelas = 'PUTRI' AND pu.role = 'penguji_sm_putri'))
+            GROUP BY nt.peserta_id
+          ) teori ON p.id = teori.peserta_id
           WHERE 1=1 ${kelasFilter}
-          GROUP BY p.id, p.nama, p.kelas
           ORDER BY p.kelas, total_nilai DESC`,
     args: [],
   });
