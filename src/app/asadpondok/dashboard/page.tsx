@@ -10,6 +10,7 @@ const PesertaClient = lazy(() => import('@/components/asadpondok/PesertaClient')
 const FormTeoriClient = lazy(() => import('@/components/asadpondok/FormTeoriClient'));
 const InputNilaiClient = lazy(() => import('@/components/asadpondok/InputNilaiClient'));
 const HasilPenilaianClient = lazy(() => import('@/components/asadpondok/HasilPenilaianClient'));
+const ReviewNilaiClient = lazy(() => import('@/components/asadpondok/ReviewNilaiClient'));
 
 interface User { id: number; username: string; full_name: string; role: string; }
 
@@ -81,6 +82,9 @@ function DashboardContent() {
       case 'hasil':
         if (isPenguji) return <p className="text-red-500">Akses ditolak</p>;
         return <HasilPenilaianClient />;
+      case 'review-nilai':
+        if (user.role !== 'superadmin') return <p className="text-red-500">Akses ditolak</p>;
+        return <ReviewNilaiClient />;
       default:
         return <SuperAdminDashboard user={user} />;
     }
