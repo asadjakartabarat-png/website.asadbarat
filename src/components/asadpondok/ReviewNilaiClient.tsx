@@ -21,6 +21,7 @@ export default function ReviewNilaiClient() {
   const [loading, setLoading] = useState(true);
   const [filterKelas, setFilterKelas] = useState('PUTRA');
   const [activeTab, setActiveTab] = useState<TabType>('jurus');
+  const [selectedPengujiId, setSelectedPengujiId] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -34,7 +35,7 @@ export default function ReviewNilaiClient() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [filterKelas]);
+  useEffect(() => { load(); setSelectedPengujiId(null); }, [filterKelas]);
 
   const getNilaiJurus = (pesertaId: number, pengujiId: number, jurusNama: string) => {
     const n = nilaiJurus.find(n => n.peserta_id === pesertaId && n.penguji_id === pengujiId && n.jurus_nama === jurusNama);
@@ -73,6 +74,8 @@ export default function ReviewNilaiClient() {
 
   const displayed = pesertaList.filter(p => p.kelas === filterKelas);
 
+  const activePenguji = pengujiKelas.find(p => p.id === selectedPengujiId) ?? pengujiKelas[0] ?? null;
+
   const renderStatusBadge = (lengkap: boolean, hasAny: boolean) => {
     if (!hasAny) return <span className="text-gray-300 text-xs">—</span>;
     if (lengkap) return <span className="text-green-600 text-xs font-medium">✅</span>;
@@ -95,6 +98,21 @@ export default function ReviewNilaiClient() {
           </button>
         ))}
       </div>
+
+      {/* Pilih Penguji */}
+      {pengujiKelas.length > 0 && (
+        <div className="flex items-center gap-3 mb-4">
+          <label className="text-sm font-medium text-gray-600 whitespace-nowrap">Penguji:</label>
+          <select
+            value={activePenguji?.id ?? ''}
+            onChange={e => setSelectedPengujiId(Number(e.target.value))}
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
+            {pengujiKelas.map(pg => (
+              <option key={pg.id} value={pg.id}>{pg.full_name || pg.username}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Tab Jurus / Teori */}
       <div className="flex gap-1 mb-4 border-b">
@@ -121,150 +139,104 @@ export default function ReviewNilaiClient() {
             <span>— Belum ada nilai</span>
           </div>
 
-          {/* Tabel Nilai Jurus */}
-          {activeTab === 'jurus' && (
+          {!activePenguji ? null : activeTab === 'jurus' ? (
             <div className="overflow-x-auto rounded-lg border bg-white">
               <table className="text-sm border-collapse min-w-max w-full">
                 <thead className="bg-green-50">
                   <tr>
-                    <th className="sticky left-0 bg-green-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r w-8">No</th>
-                    <th className="sticky left-8 bg-green-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r min-w-[140px]">Nama</th>
-                    {pengujiKelas.map(pg => (
-                      <th key={pg.id} colSpan={JURUS_LIST.length + 2}
-                        className="px-3 py-2 text-center font-medium text-green-700 border-b border-r bg-green-50 whitespace-nowrap">
-                        {pg.full_name || pg.username}
-                      </th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600 border-b border-r w-8">No</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600 border-b border-r min-w-[140px]">Nama</th>
+                    {JURUS_LIST.map(j => (
+                      <th key={j} className="px-2 py-2 text-xs font-medium text-gray-500 border-b border-r text-center whitespace-nowrap">{j}</th>
                     ))}
-                  </tr>
-                  <tr>
-                    <th className="sticky left-0 bg-green-50 z-10 border-b border-r" />
-                    <th className="sticky left-8 bg-green-50 z-10 border-b border-r" />
-                    {pengujiKelas.map(pg => (
-                      <>
-                        {JURUS_LIST.map(j => (
-                          <th key={`${pg.id}-${j}`} className="px-2 py-1 text-xs font-medium text-gray-500 border-b border-r text-center whitespace-nowrap">{j}</th>
-                        ))}
-                        <th key={`${pg.id}-total`} className="px-2 py-1 text-xs font-semibold text-green-700 border-b border-r text-center bg-green-50">Total</th>
-                        <th key={`${pg.id}-status`} className="px-2 py-1 text-xs font-medium text-gray-500 border-b border-r text-center">Status</th>
-                      </>
-                    ))}
+                    <th className="px-2 py-2 text-xs font-semibold text-green-700 border-b border-r text-center bg-green-50">Total</th>
+                    <th className="px-2 py-2 text-xs font-medium text-gray-500 border-b text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {displayed.map((p, i) => (
-                    <tr key={p.id} className="hover:bg-green-50">
-                      <td className="sticky left-0 bg-white z-10 px-3 py-2 text-gray-400 border-r text-center">{i + 1}</td>
-                      <td className="sticky left-8 bg-white z-10 px-3 py-2 font-medium border-r whitespace-nowrap">{p.nama}</td>
-                      {pengujiKelas.map(pg => {
-                        const total = getTotalJurusPenguji(p.id, pg.id);
-                        const lengkap = isJurusLengkap(p.id, pg.id);
-                        const hasAny = nilaiJurus.some(n => n.peserta_id === p.id && n.penguji_id === pg.id);
-                        return (
-                          <>
-                            {JURUS_LIST.map(j => {
-                              const val = getNilaiJurus(p.id, pg.id, j);
-                              return (
-                                <td key={`${pg.id}-${j}`} className="px-2 py-2 border-r text-center">
-                                  {val !== null
-                                    ? <span className="font-medium text-gray-800">{val}</span>
-                                    : <span className="text-gray-300">—</span>}
-                                </td>
-                              );
-                            })}
-                            <td key={`${pg.id}-total`} className="px-2 py-2 border-r text-center font-bold text-green-700 bg-green-50">
-                              {total !== null ? total.toFixed(1) : <span className="text-gray-300">—</span>}
+                  {displayed.map((p, i) => {
+                    const total = getTotalJurusPenguji(p.id, activePenguji.id);
+                    const lengkap = isJurusLengkap(p.id, activePenguji.id);
+                    const hasAny = nilaiJurus.some(n => n.peserta_id === p.id && n.penguji_id === activePenguji.id);
+                    return (
+                      <tr key={p.id} className="hover:bg-green-50">
+                        <td className="px-3 py-2 text-gray-400 border-r text-center">{i + 1}</td>
+                        <td className="px-3 py-2 font-medium border-r whitespace-nowrap">{p.nama}</td>
+                        {JURUS_LIST.map(j => {
+                          const val = getNilaiJurus(p.id, activePenguji.id, j);
+                          return (
+                            <td key={j} className="px-2 py-2 border-r text-center">
+                              {val !== null ? <span className="font-medium text-gray-800">{val}</span> : <span className="text-gray-300">—</span>}
                             </td>
-                            <td key={`${pg.id}-status`} className="px-2 py-2 border-r text-center">
-                              {renderStatusBadge(lengkap, hasAny)}
+                          );
+                        })}
+                        <td className="px-2 py-2 border-r text-center font-bold text-green-700 bg-green-50">
+                          {total !== null ? total.toFixed(1) : <span className="text-gray-300">—</span>}
+                        </td>
+                        <td className="px-2 py-2 text-center">{renderStatusBadge(lengkap, hasAny)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : teoriList.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">Belum ada item teori yang dikonfigurasi</div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border bg-white">
+              <table className="text-sm border-collapse min-w-max w-full">
+                <thead className="bg-purple-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600 border-b border-r w-8">No</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600 border-b border-r min-w-[140px]">Nama</th>
+                    {teoriList.map(t => (
+                      <th key={t.id} className="px-2 py-2 text-xs font-medium text-gray-500 border-b border-r text-center min-w-[100px]">{t.nama_teori}</th>
+                    ))}
+                    <th className="px-2 py-2 text-xs font-semibold text-purple-700 border-b border-r text-center bg-purple-50">Total</th>
+                    <th className="px-2 py-2 text-xs font-medium text-gray-500 border-b text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {displayed.map((p, i) => {
+                    const total = getTotalTeoriPenguji(p.id, activePenguji.id);
+                    const lengkap = isTeoriLengkap(p.id, activePenguji.id);
+                    const hasAny = nilaiTeori.some(n => n.peserta_id === p.id && n.penguji_id === activePenguji.id);
+                    return (
+                      <tr key={p.id} className="hover:bg-purple-50">
+                        <td className="px-3 py-2 text-gray-400 border-r text-center">{i + 1}</td>
+                        <td className="px-3 py-2 font-medium border-r whitespace-nowrap">{p.nama}</td>
+                        {teoriList.map(t => {
+                          const val = getNilaiTeori(p.id, activePenguji.id, t.id);
+                          return (
+                            <td key={t.id} className="px-2 py-2 border-r text-center">
+                              {val !== null ? <span className="font-medium text-gray-800">{val}</span> : <span className="text-gray-300">—</span>}
                             </td>
-                          </>
-                        );
-                      })}
-                    </tr>
-                  ))}
+                          );
+                        })}
+                        <td className="px-2 py-2 border-r text-center font-bold text-purple-700 bg-purple-50">
+                          {total !== null ? total.toFixed(1) : <span className="text-gray-300">—</span>}
+                        </td>
+                        <td className="px-2 py-2 text-center">{renderStatusBadge(lengkap, hasAny)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
 
-          {/* Tabel Nilai Teori */}
-          {activeTab === 'teori' && (
-            teoriList.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">Belum ada item teori yang dikonfigurasi</div>
-            ) : (
-              <div className="overflow-x-auto rounded-lg border bg-white">
-                <table className="text-sm border-collapse min-w-max w-full">
-                  <thead className="bg-purple-50">
-                    <tr>
-                      <th className="sticky left-0 bg-purple-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r w-8">No</th>
-                      <th className="sticky left-8 bg-purple-50 z-10 px-3 py-2 text-left font-medium text-gray-600 border-b border-r min-w-[140px]">Nama</th>
-                      {pengujiKelas.map(pg => (
-                        <th key={pg.id} colSpan={teoriList.length + 2}
-                          className="px-3 py-2 text-center font-medium text-purple-700 border-b border-r bg-purple-50 whitespace-nowrap">
-                          {pg.full_name || pg.username}
-                        </th>
-                      ))}
-                    </tr>
-                    <tr>
-                      <th className="sticky left-0 bg-purple-50 z-10 border-b border-r" />
-                      <th className="sticky left-8 bg-purple-50 z-10 border-b border-r" />
-                      {pengujiKelas.map(pg => (
-                        <>
-                          {teoriList.map(t => (
-                            <th key={`${pg.id}-${t.id}`} className="px-2 py-1 text-xs font-medium text-gray-500 border-b border-r text-center min-w-[100px]">{t.nama_teori}</th>
-                          ))}
-                          <th key={`${pg.id}-total`} className="px-2 py-1 text-xs font-semibold text-purple-700 border-b border-r text-center bg-purple-50">Total</th>
-                          <th key={`${pg.id}-status`} className="px-2 py-1 text-xs font-medium text-gray-500 border-b border-r text-center">Status</th>
-                        </>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {displayed.map((p, i) => (
-                      <tr key={p.id} className="hover:bg-purple-50">
-                        <td className="sticky left-0 bg-white z-10 px-3 py-2 text-gray-400 border-r text-center">{i + 1}</td>
-                        <td className="sticky left-8 bg-white z-10 px-3 py-2 font-medium border-r whitespace-nowrap">{p.nama}</td>
-                        {pengujiKelas.map(pg => {
-                          const total = getTotalTeoriPenguji(p.id, pg.id);
-                          const lengkap = isTeoriLengkap(p.id, pg.id);
-                          const hasAny = nilaiTeori.some(n => n.peserta_id === p.id && n.penguji_id === pg.id);
-                          return (
-                            <>
-                              {teoriList.map(t => {
-                                const val = getNilaiTeori(p.id, pg.id, t.id);
-                                return (
-                                  <td key={`${pg.id}-${t.id}`} className="px-2 py-2 border-r text-center">
-                                    {val !== null
-                                      ? <span className="font-medium text-gray-800">{val}</span>
-                                      : <span className="text-gray-300">—</span>}
-                                  </td>
-                                );
-                              })}
-                              <td key={`${pg.id}-total`} className="px-2 py-2 border-r text-center font-bold text-purple-700 bg-purple-50">
-                                {total !== null ? total.toFixed(1) : <span className="text-gray-300">—</span>}
-                              </td>
-                              <td key={`${pg.id}-status`} className="px-2 py-2 border-r text-center">
-                                {renderStatusBadge(lengkap, hasAny)}
-                              </td>
-                            </>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )
-          )}
-
-          {/* Ringkasan */}
+          {/* Ringkasan semua penguji */}
           <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
             {pengujiKelas.map(pg => {
               const totalPeserta = displayed.length;
               const jurusSelesai = displayed.filter(p => isJurusLengkap(p.id, pg.id)).length;
               const teoriSelesai = displayed.filter(p => isTeoriLengkap(p.id, pg.id)).length;
               return (
-                <div key={pg.id} className="bg-gray-50 border rounded-lg p-3 text-sm">
+                <div key={pg.id}
+                  onClick={() => setSelectedPengujiId(pg.id)}
+                  className={`border rounded-lg p-3 text-sm cursor-pointer transition-colors ${
+                    activePenguji?.id === pg.id ? 'bg-green-50 border-green-400' : 'bg-gray-50 hover:bg-gray-100'
+                  }`}>
                   <p className="font-semibold text-gray-700 truncate">{pg.full_name || pg.username}</p>
                   <p className="text-gray-500 text-xs mt-1">Jurus: <span className={jurusSelesai === totalPeserta ? 'text-green-600 font-medium' : 'text-amber-600 font-medium'}>{jurusSelesai}/{totalPeserta}</span></p>
                   {teoriList.length > 0 && (
