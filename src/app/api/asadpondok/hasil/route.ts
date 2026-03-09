@@ -17,22 +17,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const kelas = request.nextUrl.searchParams.get('kelas') || undefined;
-  const [hasil, teoriList, jurusDistinctRes] = await Promise.all([
+  const [hasil, teoriList, pengujiRes] = await Promise.all([
     getPondokHasil(kelas),
     getAllPondokTeori(),
-    turso.execute({ sql: `SELECT DISTINCT jurus_nama FROM pondok_nilai_jurus`, args: [] }),
+    turso.execute({ sql: `SELECT id, role FROM pondok_users WHERE is_active = 1 AND role IN ('penguji_sm_putra','penguji_sm_putri')`, args: [] }),
   ]);
   const totalTeoriItems = teoriList.length;
-  const totalJurusItems = jurusDistinctRes.rows.length;
 
-  // Ambil semua penguji aktif sekaligus
-  const pengujiRes = await turso.execute({
-    sql: `SELECT id, role FROM pondok_users WHERE is_active = 1 AND role IN ('penguji_sm_putra','penguji_sm_putri')`,
-    args: [],
-  });
-
-  // Hitung kelengkapan: berapa penguji yang sudah submit semua jurus+teori per peserta
-  // Query: count distinct penguji yang sudah submit >= totalJurus jurus DAN >= totalTeori teori
   const kelasArr = kelas ? [kelas] : ['PUTRA', 'PUTRI'];
   const statusMap: Record<number, { lengkap: boolean; pengujiDone: number; pengujiTotal: number }> = {};
 
@@ -48,7 +39,13 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    // Ambil count jurus per (peserta, penguji) sekaligus
+    // Hitung totalJurusItems khusus per kelas (dari penguji kelas ini)
+    const jurusDistinctRes = await turso.execute({
+      sql: `SELECT COUNT(DISTINCT jurus_nama) as cnt FROM pondok_nilai_jurus WHERE penguji_id IN (${pengujiKelas.join(',')})`,
+      args: [],
+    });
+    const totalJurusItems = Number(jurusDistinctRes.rows[0]?.cnt ?? 0);
+
     const jurusCountRes = await turso.execute({
       sql: `SELECT peserta_id, penguji_id, COUNT(*) as cnt FROM pondok_nilai_jurus
             WHERE penguji_id IN (${pengujiKelas.join(',')})
@@ -72,7 +69,7 @@ export async function GET(request: NextRequest) {
       let done = 0;
       for (const pengujiId of pengujiKelas) {
         const key = `${pid}_${pengujiId}`;
-        const jurusDone = (jurusMap[key] || 0) >= totalJurusItems;
+        const jurusDone = totalJurusItems === 0 || (jurusMap[key] || 0) >= totalJurusItems;
         const teoriDone = totalTeoriItems === 0 || (teoriMap[key] || 0) >= totalTeoriItems;
         if (jurusDone && teoriDone) done++;
       }
