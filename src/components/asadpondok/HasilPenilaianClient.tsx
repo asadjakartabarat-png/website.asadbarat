@@ -65,9 +65,9 @@ export default function HasilPenilaianClient() {
                     {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-gray-500">{i + 1}</span>}
                   </td>
                   <td className="px-4 py-3">{h.nama}</td>
-                  <td className="px-4 py-3 text-right text-gray-600">{h.total_jurus.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right text-gray-600">{h.total_teori.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right font-bold text-green-700">{h.total_nilai.toFixed(2)}</td>
+                  <td className="px-4 py-3 text-right text-gray-600">{h.total_jurus % 1 === 0 ? h.total_jurus : h.total_jurus.toFixed(1)}</td>
+                  <td className="px-4 py-3 text-right text-gray-600">{h.total_teori % 1 === 0 ? h.total_teori : h.total_teori.toFixed(1)}</td>
+                  <td className="px-4 py-3 text-right font-bold text-green-700">{h.total_nilai % 1 === 0 ? h.total_nilai : h.total_nilai.toFixed(1)}</td>
                   <td className="px-4 py-3 text-center">
                     {h.status.pengujiTotal === 0 ? (
                       <span className="text-gray-400 text-xs">-</span>
