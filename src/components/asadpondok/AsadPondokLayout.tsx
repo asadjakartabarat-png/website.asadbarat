@@ -18,6 +18,7 @@ function getNavItems(role: string): NavItem[] {
     items.push({ key: 'input-nilai', label: 'Input Nilai', icon: '✏️' });
   }
   if (role === 'superadmin') {
+    items.push({ key: 'review-nilai', label: 'Review Nilai Penguji', icon: '🔍' });
     items.push({ key: 'users', label: 'Kelola User', icon: '⚙️' });
   }
   return items;

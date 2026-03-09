@@ -16,6 +16,7 @@ export function SuperAdminDashboard({ user }: { user: User }) {
           { tab: 'teori', icon: '📋', label: 'Form Penilaian', color: 'bg-purple-50 border-purple-200 text-purple-700' },
           { tab: 'input-nilai', icon: '✏️', label: 'Input Nilai', color: 'bg-green-50 border-green-200 text-green-700' },
           { tab: 'hasil', icon: '🏆', label: 'Hasil Penilaian', color: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
+          { tab: 'review-nilai', icon: '🔍', label: 'Review Nilai Penguji', color: 'bg-indigo-50 border-indigo-200 text-indigo-700' },
           { tab: 'users', icon: '⚙️', label: 'Kelola User', color: 'bg-gray-50 border-gray-200 text-gray-700' },
         ].map(item => (
           <button key={item.tab} onClick={() => router.push(`/asadpondok/dashboard?tab=${item.tab}`)}
