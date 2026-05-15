@@ -17,9 +17,8 @@ function getSession() {
 export async function GET() {
   const session = getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!['superadmin', 'korda'].includes(session.role))
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
+  
+  // Semua role bisa GET assignment (untuk filter di Input Nilai)
   const assignments = await getAllPondokAssignments();
   return NextResponse.json({ assignments });
 }
