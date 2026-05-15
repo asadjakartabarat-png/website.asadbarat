@@ -17,19 +17,29 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const kelas = request.nextUrl.searchParams.get('kelas') || undefined;
-  const [hasil, teoriList, pengujiRes] = await Promise.all([
+  const [hasil, teoriList, assignmentRes] = await Promise.all([
     getPondokHasil(kelas),
     getAllPondokTeori(),
-    turso.execute({ sql: `SELECT id, role FROM pondok_users WHERE is_active = 1 AND role IN ('penguji_sm_putra','penguji_sm_putri')`, args: [] }),
+    turso.execute({ sql: `SELECT a.peserta_id, u.full_name FROM pondok_assignment a JOIN pondok_users u ON a.penguji_id = u.id`, args: [] }),
   ]);
   const totalTeoriItems = teoriList.length;
+
+  // Map assignment
+  const assignmentMap: Record<number, string> = {};
+  assignmentRes.rows.forEach((r: any) => {
+    assignmentMap[Number(r.peserta_id)] = r.full_name as string;
+  });
 
   const kelasArr = kelas ? [kelas] : ['PUTRA', 'PUTRI'];
   const statusMap: Record<number, { lengkap: boolean; pengujiDone: number; pengujiTotal: number }> = {};
 
   for (const k of kelasArr) {
     const roleKelas = k === 'PUTRA' ? 'penguji_sm_putra' : 'penguji_sm_putri';
-    const pengujiKelas = pengujiRes.rows.filter(r => r.role === roleKelas).map(r => Number(r.id));
+    const pengujiRes = await turso.execute({
+      sql: `SELECT id FROM pondok_users WHERE is_active = 1 AND role = ?`,
+      args: [roleKelas],
+    });
+    const pengujiKelas = pengujiRes.rows.map(r => Number(r.id));
     const pengujiTotal = pengujiKelas.length;
 
     if (pengujiTotal === 0) {
@@ -39,7 +49,6 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    // Hitung totalJurusItems khusus per kelas (dari penguji kelas ini)
     const jurusDistinctRes = await turso.execute({
       sql: `SELECT COUNT(DISTINCT jurus_nama) as cnt FROM pondok_nilai_jurus WHERE penguji_id IN (${pengujiKelas.join(',')})`,
       args: [],
@@ -81,6 +90,7 @@ export async function GET(request: NextRequest) {
     total_nilai: Number(h.total_nilai),
     total_jurus: Number(h.total_jurus),
     total_teori: Number(h.total_teori),
+    penguji_nama: assignmentMap[Number(h.id)] || null,
     status: statusMap[Number(h.id)] || { lengkap: false, pengujiDone: 0, pengujiTotal: 0 },
   }));
 
