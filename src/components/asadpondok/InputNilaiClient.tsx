@@ -49,7 +49,7 @@ export default function InputNilaiClient({ user }: Props) {
     const load = async () => {
       setLoading(true);
       const [pRes, tRes, aRes] = await Promise.all([
-        fetch(`/api/asadpondok/peserta${kelas ? `?kelas=${kelas}` : ''}`),
+        fetch('/api/asadpondok/peserta'), // Fetch SEMUA peserta (tanpa filter kelas)
         fetch('/api/asadpondok/teori'),
         fetch('/api/asadpondok/assignment'),
       ]);
@@ -64,6 +64,11 @@ export default function InputNilaiClient({ user }: Props) {
           .filter((a: any) => a.penguji_id === user.id)
           .map((a: any) => a.peserta_id);
         peserta = peserta.filter(p => assignedIds.includes(p.id));
+      }
+      
+      // Filter kelas (untuk penguji yang punya role spesifik)
+      if (kelas) {
+        peserta = peserta.filter(p => p.kelas === kelas);
       }
       setPesertaList(peserta);
       setTeoriList(teori);
