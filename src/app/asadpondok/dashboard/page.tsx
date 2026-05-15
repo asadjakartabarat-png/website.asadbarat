@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import AsadPondokLayout from '@/components/asadpondok/AsadPondokLayout';
 import { SuperAdminDashboard, KordaDashboard, PengujiDashboard } from '@/components/asadpondok/Dashboards';
 
+const AssignmentClient = lazy(() => import('@/components/asadpondok/AssignmentClient'));
 const KelolaUserClient = lazy(() => import('@/components/asadpondok/KelolaUserClient'));
 const PesertaClient = lazy(() => import('@/components/asadpondok/PesertaClient'));
 const FormTeoriClient = lazy(() => import('@/components/asadpondok/FormTeoriClient'));
@@ -67,6 +68,9 @@ function DashboardContent() {
         if (user.role === 'superadmin') return <SuperAdminDashboard user={user} />;
         if (user.role === 'korda') return <KordaDashboard user={user} />;
         return <PengujiDashboard user={user} />;
+      case 'assignment':
+        if (!['superadmin', 'korda'].includes(user.role)) return <p className="text-red-500">Akses ditolak</p>;
+        return <AssignmentClient />;
       case 'users':
         if (user.role !== 'superadmin') return <p className="text-red-500">Akses ditolak</p>;
         return <KelolaUserClient />;
