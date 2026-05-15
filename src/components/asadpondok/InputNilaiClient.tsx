@@ -48,13 +48,23 @@ export default function InputNilaiClient({ user }: Props) {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const [pRes, tRes] = await Promise.all([
+      const [pRes, tRes, aRes] = await Promise.all([
         fetch(`/api/asadpondok/peserta${kelas ? `?kelas=${kelas}` : ''}`),
         fetch('/api/asadpondok/teori'),
+        fetch('/api/asadpondok/assignment'),
       ]);
-      const [pData, tData] = await Promise.all([pRes.json(), tRes.json()]);
-      const peserta: Peserta[] = pData.peserta || [];
+      const [pData, tData, aData] = await Promise.all([pRes.json(), tRes.json(), aRes.json()]);
+      let peserta: Peserta[] = pData.peserta || [];
       const teori: Teori[] = tData.teori || [];
+      const assignments = aData.assignments || [];
+      
+      // Filter: Penguji hanya lihat peserta yang di-assign ke mereka
+      if (user.role !== 'superadmin') {
+        const assignedIds = assignments
+          .filter((a: any) => a.penguji_id === user.id)
+          .map((a: any) => a.peserta_id);
+        peserta = peserta.filter(p => assignedIds.includes(p.id));
+      }
       setPesertaList(peserta);
       setTeoriList(teori);
 
@@ -213,6 +223,12 @@ export default function InputNilaiClient({ user }: Props) {
     });
     setNilaiMap(m => ({ ...m, [p.id]: { ...m[p.id], jurus: jurusRec, savingJurus: false } }));
     toast.success(`Jurus ${p.nama} tersimpan`);
+    // Check dan lock assignment jika lengkap
+    await fetch('/api/asadpondok/assignment/check-lock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ peserta_id: p.id, penguji_id: user.id }),
+    });
   };
 
   const simpanTeori = async (p: Peserta) => {
@@ -238,6 +254,12 @@ export default function InputNilaiClient({ user }: Props) {
     });
     setNilaiMap(m => ({ ...m, [p.id]: { ...m[p.id], teori: teoriRec, savingTeori: false } }));
     toast.success(`Teori ${p.nama} tersimpan`);
+    // Check dan lock assignment jika lengkap
+    await fetch('/api/asadpondok/assignment/check-lock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ peserta_id: p.id, penguji_id: user.id }),
+    });
   };
 
   const displayed = filterKelas ? pesertaList.filter(p => p.kelas === filterKelas) : pesertaList;

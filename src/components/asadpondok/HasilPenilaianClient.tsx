@@ -6,6 +6,7 @@ interface HasilItem {
   id: number; nama: string; kelas: string;
   total_jurus: number; total_teori: number; total_nilai: number;
   status: { lengkap: boolean; pengujiDone: number; pengujiTotal: number };
+  penguji_nama?: string;
 }
 
 export default function HasilPenilaianClient() {
@@ -52,6 +53,7 @@ export default function HasilPenilaianClient() {
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Rank</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Nama</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Penguji</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">Jurus</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">Teori</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">Total</th>
@@ -65,6 +67,7 @@ export default function HasilPenilaianClient() {
                     {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-gray-500">{i + 1}</span>}
                   </td>
                   <td className="px-4 py-3">{h.nama}</td>
+                  <td className="px-4 py-3 text-gray-600 text-xs">{h.penguji_nama || '-'}</td>
                   <td className="px-4 py-3 text-right text-gray-600">{h.total_jurus % 1 === 0 ? h.total_jurus : h.total_jurus.toFixed(1)}</td>
                   <td className="px-4 py-3 text-right text-gray-600">{h.total_teori % 1 === 0 ? h.total_teori : h.total_teori.toFixed(1)}</td>
                   <td className="px-4 py-3 text-right font-bold text-green-700">{h.total_nilai % 1 === 0 ? h.total_nilai : h.total_nilai.toFixed(1)}</td>
@@ -74,13 +77,13 @@ export default function HasilPenilaianClient() {
                     ) : h.status.lengkap ? (
                       <span className="text-green-600 text-xs font-medium">✅ LENGKAP</span>
                     ) : (
-                      <span className="text-amber-600 text-xs">⏳ {h.status.pengujiDone}/{h.status.pengujiTotal}</span>
+                      <span className="text-amber-600 text-xs">⏳ Proses</span>
                     )}
                   </td>
                 </tr>
               ))}
               {displayed.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500">Belum ada data penilaian</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500">Belum ada data penilaian</td></tr>
               )}
             </tbody>
           </table>

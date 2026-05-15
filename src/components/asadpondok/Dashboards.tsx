@@ -12,7 +12,8 @@ export function SuperAdminDashboard({ user }: { user: User }) {
       <p className="text-sm text-gray-500 mb-6">Super Admin — Akses penuh semua fitur</p>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { tab: 'peserta', icon: '👥', label: 'Peserta Tes', color: 'bg-blue-50 border-blue-200 text-blue-700' },
+          { tab: 'assignment', icon: '👥', label: 'Assign Penguji', color: 'bg-cyan-50 border-cyan-200 text-cyan-700' },
+          { tab: 'peserta', icon: '👤', label: 'Peserta Tes', color: 'bg-blue-50 border-blue-200 text-blue-700' },
           { tab: 'teori', icon: '📋', label: 'Form Penilaian', color: 'bg-purple-50 border-purple-200 text-purple-700' },
           { tab: 'input-nilai', icon: '✏️', label: 'Input Nilai', color: 'bg-green-50 border-green-200 text-green-700' },
           { tab: 'hasil', icon: '🏆', label: 'Hasil Penilaian', color: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
@@ -38,7 +39,8 @@ export function KordaDashboard({ user }: { user: User }) {
       <p className="text-sm text-gray-500 mb-6">Koordinator</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {[
-          { tab: 'peserta', icon: '👥', label: 'Peserta Tes', color: 'bg-blue-50 border-blue-200 text-blue-700' },
+          { tab: 'assignment', icon: '👥', label: 'Assign Penguji', color: 'bg-cyan-50 border-cyan-200 text-cyan-700' },
+          { tab: 'peserta', icon: '👤', label: 'Peserta Tes', color: 'bg-blue-50 border-blue-200 text-blue-700' },
           { tab: 'teori', icon: '📋', label: 'Form Penilaian', color: 'bg-purple-50 border-purple-200 text-purple-700' },
           { tab: 'hasil', icon: '🏆', label: 'Hasil Penilaian', color: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
         ].map(item => (
