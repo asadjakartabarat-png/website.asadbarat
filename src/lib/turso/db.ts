@@ -1021,17 +1021,13 @@ export async function getPondokHasil(kelas?: string) {
           LEFT JOIN (
             SELECT nj.peserta_id, SUM(nj.nilai) as total_jurus
             FROM pondok_nilai_jurus nj
-            JOIN pondok_peserta pp ON pp.id = nj.peserta_id
-            JOIN pondok_users pu ON pu.id = nj.penguji_id AND pu.is_active = 1
-              AND ((pp.kelas = 'PUTRA' AND pu.role = 'penguji_sm_putra') OR (pp.kelas = 'PUTRI' AND pu.role = 'penguji_sm_putri'))
+            JOIN pondok_assignment a ON a.peserta_id = nj.peserta_id AND a.penguji_id = nj.penguji_id
             GROUP BY nj.peserta_id
           ) jurus ON p.id = jurus.peserta_id
           LEFT JOIN (
             SELECT nt.peserta_id, SUM(nt.nilai) as total_teori
             FROM pondok_nilai_teori nt
-            JOIN pondok_peserta pp ON pp.id = nt.peserta_id
-            JOIN pondok_users pu ON pu.id = nt.penguji_id AND pu.is_active = 1
-              AND ((pp.kelas = 'PUTRA' AND pu.role = 'penguji_sm_putra') OR (pp.kelas = 'PUTRI' AND pu.role = 'penguji_sm_putri'))
+            JOIN pondok_assignment a ON a.peserta_id = nt.peserta_id AND a.penguji_id = nt.penguji_id
             GROUP BY nt.peserta_id
           ) teori ON p.id = teori.peserta_id
           WHERE 1=1 ${kelasFilter}
@@ -1048,4 +1044,105 @@ export async function getPondokPengujiAktifByKelas(kelas: string) {
     args: [roleKelas],
   });
   return result.rows;
+}
+
+// ─── PONDOK ASSIGNMENT ────────────────────────────────────────────────────────
+
+export async function getAllPondokAssignments() {
+  const result = await turso.execute({
+    sql: `SELECT a.*, p.nama as peserta_nama, p.kelas, u.username as penguji_username, u.full_name as penguji_full_name
+          FROM pondok_assignment a
+          JOIN pondok_peserta p ON a.peserta_id = p.id
+          JOIN pondok_users u ON a.penguji_id = u.id
+          ORDER BY p.kelas, p.nama`,
+    args: [],
+  });
+  return result.rows;
+}
+
+export async function getPondokAssignmentByPeserta(pesertaId: number) {
+  const result = await turso.execute({
+    sql: `SELECT a.*, u.username as penguji_username, u.full_name as penguji_full_name
+          FROM pondok_assignment a
+          JOIN pondok_users u ON a.penguji_id = u.id
+          WHERE a.peserta_id = ?`,
+    args: [pesertaId],
+  });
+  return result.rows[0] || null;
+}
+
+export async function getPondokAssignmentsByPenguji(pengujiId: number) {
+  const result = await turso.execute({
+    sql: `SELECT a.*, p.nama as peserta_nama, p.kelas
+          FROM pondok_assignment a
+          JOIN pondok_peserta p ON a.peserta_id = p.id
+          WHERE a.penguji_id = ?
+          ORDER BY p.nama`,
+    args: [pengujiId],
+  });
+  return result.rows;
+}
+
+export async function createPondokAssignment(data: { peserta_id: number; penguji_id: number }) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `INSERT INTO pondok_assignment (peserta_id, penguji_id, is_locked, created_at) VALUES (?, ?, 0, ?)`,
+    args: [data.peserta_id, data.penguji_id, now],
+  });
+  const result = await turso.execute({
+    sql: `SELECT a.*, p.nama as peserta_nama, p.kelas, u.username as penguji_username, u.full_name as penguji_full_name
+          FROM pondok_assignment a
+          JOIN pondok_peserta p ON a.peserta_id = p.id
+          JOIN pondok_users u ON a.penguji_id = u.id
+          WHERE a.peserta_id = ?`,
+    args: [data.peserta_id],
+  });
+  return result.rows[0];
+}
+
+export async function updatePondokAssignment(pesertaId: number, pengujiId: number) {
+  await turso.execute({
+    sql: `UPDATE pondok_assignment SET penguji_id = ? WHERE peserta_id = ? AND is_locked = 0`,
+    args: [pengujiId, pesertaId],
+  });
+  const result = await turso.execute({
+    sql: `SELECT a.*, p.nama as peserta_nama, p.kelas, u.username as penguji_username, u.full_name as penguji_full_name
+          FROM pondok_assignment a
+          JOIN pondok_peserta p ON a.peserta_id = p.id
+          JOIN pondok_users u ON a.penguji_id = u.id
+          WHERE a.peserta_id = ?`,
+    args: [pesertaId],
+  });
+  return result.rows[0];
+}
+
+export async function deletePondokAssignment(pesertaId: number) {
+  await turso.execute({
+    sql: `DELETE FROM pondok_assignment WHERE peserta_id = ? AND is_locked = 0`,
+    args: [pesertaId],
+  });
+}
+
+export async function lockPondokAssignment(pesertaId: number) {
+  await turso.execute({
+    sql: `UPDATE pondok_assignment SET is_locked = 1 WHERE peserta_id = ?`,
+    args: [pesertaId],
+  });
+}
+
+export async function checkPondokAssignmentComplete(pesertaId: number, pengujiId: number) {
+  const [jurusCount, teoriCount, teoriTotal] = await Promise.all([
+    turso.execute({
+      sql: `SELECT COUNT(DISTINCT jurus_nama) as cnt FROM pondok_nilai_jurus WHERE peserta_id = ? AND penguji_id = ?`,
+      args: [pesertaId, pengujiId],
+    }),
+    turso.execute({
+      sql: `SELECT COUNT(*) as cnt FROM pondok_nilai_teori WHERE peserta_id = ? AND penguji_id = ?`,
+      args: [pesertaId, pengujiId],
+    }),
+    turso.execute({ sql: `SELECT COUNT(*) as cnt FROM pondok_teori`, args: [] }),
+  ]);
+  const jurusComplete = Number(jurusCount.rows[0].cnt) >= 11;
+  const teoriComplete = Number(teoriCount.rows[0].cnt) >= Number(teoriTotal.rows[0].cnt);
+  return jurusComplete && teoriComplete;
 }
