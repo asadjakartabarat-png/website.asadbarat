@@ -23,16 +23,29 @@ export default function PesertaClient() {
 
   useEffect(() => { load(); }, []);
 
+  const parseNama = (input: string) => input.split(/,| dan /i).map(s => s.trim()).filter(Boolean);
+
   const openAdd = () => { setEditItem(null); setForm({ nama: '', kelas: 'PUTRA' }); setShowForm(true); };
   const openEdit = (p: Peserta) => { setEditItem(p); setForm({ nama: p.nama, kelas: p.kelas }); setShowForm(true); };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = editItem
-      ? await fetch(`/api/asadpondok/peserta/${editItem.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
-      : await fetch('/api/asadpondok/peserta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
-    if (res.ok) { toast.success(editItem ? 'Peserta diperbarui' : 'Peserta ditambahkan', { duration: 500 }); setShowForm(false); load(); }
-    else { const d = await res.json(); toast.error(d.error || 'Gagal'); }
+    if (editItem) {
+      const res = await fetch(`/api/asadpondok/peserta/${editItem.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+      if (res.ok) { toast.success('Peserta diperbarui', { duration: 500 }); setShowForm(false); load(); }
+      else { const d = await res.json(); toast.error(d.error || 'Gagal'); }
+      return;
+    }
+    const namaList = parseNama(form.nama);
+    if (namaList.length === 0) return;
+    let berhasil = 0;
+    for (const nama of namaList) {
+      const res = await fetch('/api/asadpondok/peserta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nama, kelas: form.kelas }) });
+      if (res.ok) berhasil++;
+    }
+    toast.success(`${berhasil} peserta ditambahkan`, { duration: 500 });
+    setShowForm(false);
+    load();
   };
 
   const handleDelete = async (id: number) => {
@@ -79,7 +92,18 @@ export default function PesertaClient() {
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
                 <label className="block text-sm font-medium mb-1">Nama Peserta</label>
-                <input value={form.nama} onChange={e => setForm(f => ({ ...f, nama: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm" required />
+                {editItem ? (
+                  <input value={form.nama} onChange={e => setForm(f => ({ ...f, nama: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm" required />
+                ) : (
+                  <>
+                    <textarea value={form.nama} onChange={e => setForm(f => ({ ...f, nama: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm" rows={3} placeholder="Contoh: M. Febrian, Rezky Anan, Ikhwan dan Budi" required />
+                    {form.nama && (
+                      <ul className="mt-1 text-xs text-gray-500 list-disc pl-4">
+                        {parseNama(form.nama).map((n, i) => <li key={i}>{n}</li>)}
+                      </ul>
+                    )}
+                  </>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Kelas</label>
