@@ -16,6 +16,8 @@ type NilaiMap = Record<number, {
 }>;
 // unlockMap[peserta_id][penguji_id] = unlocked_until ISO string
 type UnlockMap = Record<number, Record<number, string>>;
+// nilaiByPenguji[penguji_id][peserta_id][jurus_nama] = EntryVal
+type NilaiByPenguji = Record<number, Record<number, Record<string, EntryVal>>>;
 
 interface Penguji { id: number; username: string; full_name: string; role: string; }
 interface Props { user: { id: number; role: string; username?: string }; }
@@ -32,6 +34,7 @@ export default function InputNilaiClient({ user }: Props) {
   const [unlockMap, setUnlockMap] = useState<UnlockMap>({});
   const [unlockingId, setUnlockingId] = useState<string | null>(null);
   const [pengujiList, setPengujiList] = useState<Penguji[]>([]);
+  const [nilaiByPenguji, setNilaiByPenguji] = useState<NilaiByPenguji>({});
   const [loading, setLoading] = useState(true);
   const [filterKelas, setFilterKelas] = useState('');
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
@@ -115,9 +118,26 @@ export default function InputNilaiClient({ user }: Props) {
       if (['superadmin', 'korda'].includes(user.role)) {
         const pRes = await fetch('/api/asadpondok/users');
         const pData = await pRes.json();
-        setPengujiList((pData.users || []).filter((u: Penguji) =>
+        const pengujiArr: Penguji[] = (pData.users || []).filter((u: Penguji) =>
           u.role === 'penguji_sm_putra' || u.role === 'penguji_sm_putri'
-        ));
+        );
+        setPengujiList(pengujiArr);
+
+        // Load nilai per penguji untuk cek lock
+        const byPenguji: NilaiByPenguji = {};
+        await Promise.all(pengujiArr.map(async pg => {
+          byPenguji[pg.id] = {};
+          await Promise.all(peserta.map(async p => {
+            const jRes = await fetch(`/api/asadpondok/nilai-jurus?peserta_id=${p.id}&penguji_id=${pg.id}`).then(r => r.json());
+            const jurusRec: Record<string, EntryVal> = {};
+            JURUS_LIST.forEach(j => {
+              const f = (jRes.nilai || []).find((n: any) => n.jurus_nama === j);
+              jurusRec[j] = f ? { id: f.id, nilai: String(f.nilai), created_at: f.created_at } : null;
+            });
+            byPenguji[pg.id][p.id] = jurusRec;
+          }));
+        }));
+        setNilaiByPenguji(byPenguji);
       }
 
       setLoading(false);
@@ -330,7 +350,7 @@ export default function InputNilaiClient({ user }: Props) {
                   {['superadmin', 'korda'].includes(user.role) && pengujiList.map(pg => {
                     const unlockUntil = unlockMap[p.id]?.[pg.id];
                     const hasLockedNilai = JURUS_LIST.some(j => {
-                      const e = data?.jurus[j];
+                      const e = nilaiByPenguji[pg.id]?.[p.id]?.[j];
                       return e?.created_at && !isEditable(e.created_at, unlockUntil);
                     });
                     if (!hasLockedNilai) return null;
@@ -453,7 +473,7 @@ export default function InputNilaiClient({ user }: Props) {
                           {['superadmin', 'korda'].includes(user.role) && pengujiList.map(pg => {
                             const pgUnlock = unlockMap[p.id]?.[pg.id];
                             const hasLocked = JURUS_LIST.some(j => {
-                              const e = data?.jurus[j];
+                              const e = nilaiByPenguji[pg.id]?.[p.id]?.[j];
                               return e?.created_at && !isEditable(e.created_at, pgUnlock);
                             });
                             if (!hasLocked) return null;
