@@ -87,8 +87,8 @@ function DashboardContent() {
         if (isPenguji) return <p className="text-red-500">Akses ditolak</p>;
         return <HasilPenilaianClient />;
       case 'review-nilai':
-        if (user.role !== 'superadmin') return <p className="text-red-500">Akses ditolak</p>;
-        return <ReviewNilaiClient />;
+        if (!['superadmin', 'korda'].includes(user.role)) return <p className="text-red-500">Akses ditolak</p>;
+        return <ReviewNilaiClient user={user} />;
       default:
         return <SuperAdminDashboard user={user} />;
     }
