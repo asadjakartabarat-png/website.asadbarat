@@ -31,14 +31,14 @@ export default function PesertaClient() {
     const res = editItem
       ? await fetch(`/api/asadpondok/peserta/${editItem.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
       : await fetch('/api/asadpondok/peserta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
-    if (res.ok) { toast.success(editItem ? 'Peserta diperbarui' : 'Peserta ditambahkan'); setShowForm(false); load(); }
+    if (res.ok) { toast.success(editItem ? 'Peserta diperbarui' : 'Peserta ditambahkan', { duration: 500 }); setShowForm(false); load(); }
     else { const d = await res.json(); toast.error(d.error || 'Gagal'); }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm('Hapus peserta ini?')) return;
     await fetch(`/api/asadpondok/peserta/${id}`, { method: 'DELETE' });
-    toast.success('Peserta dihapus'); load();
+    toast.success('Peserta dihapus', { duration: 500 }); load();
   };
 
   const filtered = filterKelas ? peserta.filter(p => p.kelas === filterKelas) : peserta;
