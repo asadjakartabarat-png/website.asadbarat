@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 interface Peserta { id: number; nama: string; kelas: string; }
 interface Teori { id: number; nama_teori: string; urutan: number; }
@@ -9,8 +10,9 @@ interface NilaiJurus { peserta_id: number; penguji_id: number; jurus_nama: strin
 interface NilaiTeori { peserta_id: number; penguji_id: number; teori_id: number; nilai: number; }
 
 type TabType = 'jurus' | 'teori';
+interface Props { user: { id: number; role: string; } }
 
-export default function ReviewNilaiClient() {
+export default function ReviewNilaiClient({ user }: Props) {
   const [pesertaList, setPesertaList] = useState<Peserta[]>([]);
   const [teoriList, setTeoriList] = useState<Teori[]>([]);
   const [pengujiList, setPengujiList] = useState<Penguji[]>([]);
@@ -20,6 +22,9 @@ export default function ReviewNilaiClient() {
   const [filterKelas, setFilterKelas] = useState('PUTRA');
   const [activeTab, setActiveTab] = useState<TabType>('jurus');
   const [selectedPengujiId, setSelectedPengujiId] = useState<number | null>(null);
+  const [editingJurus, setEditingJurus] = useState<Record<string, string>>({});
+  const [editingTeori, setEditingTeori] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -70,6 +75,35 @@ export default function ReviewNilaiClient() {
   const displayed = pesertaList.filter(p => p.kelas === filterKelas);
 
   const activePenguji = pengujiKelas.find(p => p.id === selectedPengujiId) ?? pengujiKelas[0] ?? null;
+
+  const jurusKey = (pesertaId: number, jurusNama: string) => `${pesertaId}_${jurusNama}`;
+  const teoriKey = (pesertaId: number, teoriId: number) => `${pesertaId}_${teoriId}`;
+
+  const saveJurus = async (pesertaId: number, pengujiId: number, jurusNama: string, nilai: number) => {
+    setSaving(true);
+    await fetch('/api/asadpondok/nilai-jurus', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ peserta_id: pesertaId, penguji_id: pengujiId, jurus_nama: jurusNama, nilai }),
+    });
+    const res = await fetch('/api/asadpondok/review-nilai');
+    const data = await res.json();
+    setNilaiJurus(data.nilaiJurus || []);
+    setSaving(false);
+    toast.success('Tersimpan', { duration: 500 });
+  };
+
+  const saveTeori = async (pesertaId: number, pengujiId: number, teoriId: number, nilai: number) => {
+    setSaving(true);
+    await fetch('/api/asadpondok/nilai-teori', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ peserta_id: pesertaId, penguji_id: pengujiId, teori_id: teoriId, nilai }),
+    });
+    const res = await fetch('/api/asadpondok/review-nilai');
+    const data = await res.json();
+    setNilaiTeori(data.nilaiTeori || []);
+    setSaving(false);
+    toast.success('Tersimpan', { duration: 500 });
+  };
 
   const statusBadge = (lengkap: boolean, hasAny: boolean) => {
     if (!hasAny) return <span className="text-gray-300 text-xs">—</span>;
@@ -157,9 +191,33 @@ export default function ReviewNilaiClient() {
                           <td className="px-3 py-2 font-medium border-r whitespace-nowrap">{p.nama}</td>
                           {jurusHeaders.map(j => {
                             const val = getNilaiJurus(p.id, activePenguji.id, j);
+                            const k = jurusKey(p.id, j);
+                            const editVal = editingJurus[k];
                             return (
                               <td key={j} className="px-2 py-2 border-r text-center">
-                                {val !== null ? <span className="font-medium text-gray-800">{val}</span> : <span className="text-gray-300">—</span>}
+                                {editVal !== undefined ? (
+                                  <input
+                                    type="number" step="0.01" min="0" max="100" autoFocus
+                                    value={editVal}
+                                    onChange={e => setEditingJurus(m => ({ ...m, [k]: e.target.value }))}
+                                    onBlur={async () => {
+                                      const n = parseFloat(editVal);
+                                      if (!isNaN(n)) await saveJurus(p.id, activePenguji.id, j, n);
+                                      setEditingJurus(m => { const x = { ...m }; delete x[k]; return x; });
+                                    }}
+                                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditingJurus(m => { const x = { ...m }; delete x[k]; return x; }); }}
+                                    className="w-16 border-2 border-green-400 rounded px-1 py-1 text-center text-sm focus:outline-none"
+                                    disabled={saving}
+                                  />
+                                ) : (
+                                  <span
+                                    onClick={() => setEditingJurus(m => ({ ...m, [k]: val !== null ? String(val) : '' }))}
+                                    className="cursor-pointer hover:bg-green-100 px-2 py-1 rounded font-medium text-gray-800"
+                                    title="Klik untuk edit"
+                                  >
+                                    {val !== null ? val : <span className="text-gray-300">—</span>}
+                                  </span>
+                                )}
                               </td>
                             );
                           })}
@@ -193,9 +251,33 @@ export default function ReviewNilaiClient() {
                       <td className="sticky left-0 bg-white z-10 px-3 py-2 font-medium text-gray-700 border-r whitespace-nowrap">{t.nama_teori}</td>
                       {displayed.map(p => {
                         const val = getNilaiTeori(p.id, activePenguji.id, t.id);
+                        const k = teoriKey(p.id, t.id);
+                        const editVal = editingTeori[k];
                         return (
                           <td key={p.id} className="px-2 py-2 border-r text-center">
-                            {val !== null ? <span className="font-medium text-gray-800">{val}</span> : <span className="text-gray-300">—</span>}
+                            {editVal !== undefined ? (
+                              <input
+                                type="number" step="0.01" min="0" max="100" autoFocus
+                                value={editVal}
+                                onChange={e => setEditingTeori(m => ({ ...m, [k]: e.target.value }))}
+                                onBlur={async () => {
+                                  const n = parseFloat(editVal);
+                                  if (!isNaN(n)) await saveTeori(p.id, activePenguji.id, t.id, n);
+                                  setEditingTeori(m => { const x = { ...m }; delete x[k]; return x; });
+                                }}
+                                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditingTeori(m => { const x = { ...m }; delete x[k]; return x; }); }}
+                                className="w-16 border-2 border-purple-400 rounded px-1 py-1 text-center text-sm focus:outline-none"
+                                disabled={saving}
+                              />
+                            ) : (
+                              <span
+                                onClick={() => setEditingTeori(m => ({ ...m, [k]: val !== null ? String(val) : '' }))}
+                                className="cursor-pointer hover:bg-purple-100 px-2 py-1 rounded font-medium text-gray-800"
+                                title="Klik untuk edit"
+                              >
+                                {val !== null ? val : <span className="text-gray-300">—</span>}
+                              </span>
+                            )}
                           </td>
                         );
                       })}
