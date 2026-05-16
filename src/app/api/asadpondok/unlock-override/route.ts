@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const session = getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (session.role !== 'superadmin')
+  if (!['superadmin', 'korda'].includes(session.role))
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { peserta_id, penguji_id } = await request.json();
