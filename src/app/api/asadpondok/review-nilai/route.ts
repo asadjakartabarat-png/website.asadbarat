@@ -13,7 +13,7 @@ function getSession() {
 export async function GET(request: NextRequest) {
   const session = getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (session.role !== 'superadmin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!['superadmin', 'korda'].includes(session.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const kelas = request.nextUrl.searchParams.get('kelas') || undefined;
 
