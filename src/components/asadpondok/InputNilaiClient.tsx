@@ -111,8 +111,8 @@ export default function InputNilaiClient({ user }: Props) {
       });
       setUnlockMap(uMap);
 
-      // Load daftar penguji (hanya untuk superadmin)
-      if (user.role === 'superadmin') {
+      // Load daftar penguji (untuk superadmin dan korda)
+      if (['superadmin', 'korda'].includes(user.role)) {
         const pRes = await fetch('/api/asadpondok/users');
         const pData = await pRes.json();
         setPengujiList((pData.users || []).filter((u: Penguji) =>
@@ -327,7 +327,7 @@ export default function InputNilaiClient({ user }: Props) {
                   <span className="font-semibold text-gray-900">{p.nama}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {user.role === 'superadmin' && pengujiList.map(pg => {
+                  {['superadmin', 'korda'].includes(user.role) && pengujiList.map(pg => {
                     const unlockUntil = unlockMap[p.id]?.[pg.id];
                     const hasLockedNilai = JURUS_LIST.some(j => {
                       const e = data?.jurus[j];
@@ -450,7 +450,7 @@ export default function InputNilaiClient({ user }: Props) {
                         <div>{p.nama}</div>
                         <div className="flex flex-wrap items-center gap-1 mt-0.5">
                           <span className={`text-xs px-1.5 py-0.5 rounded ${p.kelas === 'PUTRA' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{p.kelas}</span>
-                          {user.role === 'superadmin' && pengujiList.map(pg => {
+                          {['superadmin', 'korda'].includes(user.role) && pengujiList.map(pg => {
                             const pgUnlock = unlockMap[p.id]?.[pg.id];
                             const hasLocked = JURUS_LIST.some(j => {
                               const e = data?.jurus[j];
