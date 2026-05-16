@@ -55,8 +55,7 @@ export default function ReviewNilaiClient() {
     return vals.length === 0 ? null : vals.reduce((s, n) => s + n.nilai, 0);
   };
 
-  // Nama jurus diambil dinamis dari data (bukan hardcoded)
-  const jurusHeaders = Array.from(new Set(nilaiJurus.map(n => n.jurus_nama))).sort();
+  const jurusHeaders = ['Jurus 1A','Jurus 1B','Jurus 2A','Jurus 2B','Jurus 3A','Jurus 3B','Jurus 4A','Jurus 4B','Jurus 5','Jurus 6','Jurus 7'];
 
   const isJurusLengkap = (pesertaId: number, pengujiId: number) =>
     jurusHeaders.length > 0 && jurusHeaders.every(j => getNilaiJurus(pesertaId, pengujiId, j) !== null);
