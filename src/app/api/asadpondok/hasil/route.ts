@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const [hasil, teoriList, assignmentRes] = await Promise.all([
     getPondokHasil(kelas),
     getAllPondokTeori(),
-    turso.execute({ sql: `SELECT a.peserta_id, u.full_name FROM pondok_assignment a JOIN pondok_users u ON a.penguji_id = u.id`, args: [] }),
+    turso.execute({ sql: `SELECT a.peserta_id, a.penguji_id, u.full_name FROM pondok_assignment a JOIN pondok_users u ON a.penguji_id = u.id`, args: [] }),
   ]);
   const totalTeoriItems = teoriList.length;
 
@@ -30,57 +30,51 @@ export async function GET(request: NextRequest) {
     assignmentMap[Number(r.peserta_id)] = r.full_name as string;
   });
 
-  const kelasArr = kelas ? [kelas] : ['PUTRA', 'PUTRI'];
+  const TOTAL_JURUS = 11;
+
+  // Ambil jumlah jurus & teori per (peserta, penguji) dari assignment
+  const [jurusCountRes, teoriCountRes] = await Promise.all([
+    turso.execute({
+      sql: `SELECT nj.peserta_id, nj.penguji_id, COUNT(DISTINCT nj.jurus_nama) as cnt
+            FROM pondok_nilai_jurus nj
+            JOIN pondok_assignment a ON a.peserta_id = nj.peserta_id AND a.penguji_id = nj.penguji_id
+            GROUP BY nj.peserta_id, nj.penguji_id`,
+      args: [],
+    }),
+    totalTeoriItems > 0 ? turso.execute({
+      sql: `SELECT nt.peserta_id, nt.penguji_id, COUNT(*) as cnt
+            FROM pondok_nilai_teori nt
+            JOIN pondok_assignment a ON a.peserta_id = nt.peserta_id AND a.penguji_id = nt.penguji_id
+            GROUP BY nt.peserta_id, nt.penguji_id`,
+      args: [],
+    }) : Promise.resolve({ rows: [] }),
+  ]);
+
+  const jurusMap: Record<string, number> = {};
+  jurusCountRes.rows.forEach((r: any) => { jurusMap[`${r.peserta_id}_${r.penguji_id}`] = Number(r.cnt); });
+  const teoriMap: Record<string, number> = {};
+  teoriCountRes.rows.forEach((r: any) => { teoriMap[`${r.peserta_id}_${r.penguji_id}`] = Number(r.cnt); });
+
+  // assignmentRes sudah di-fetch di atas, buat map peserta_id -> penguji_id
+  const pengujiAssignedMap: Record<number, number> = {};
+  assignmentRes.rows.forEach((r: any) => {
+    pengujiAssignedMap[Number(r.peserta_id)] = Number(r.penguji_id);
+  });
+
   const statusMap: Record<number, { lengkap: boolean; pengujiDone: number; pengujiTotal: number }> = {};
-
-  for (const k of kelasArr) {
-    const roleKelas = k === 'PUTRA' ? 'penguji_sm_putra' : 'penguji_sm_putri';
-    const pengujiRes = await turso.execute({
-      sql: `SELECT id FROM pondok_users WHERE is_active = 1 AND role = ?`,
-      args: [roleKelas],
-    });
-    const pengujiKelas = pengujiRes.rows.map(r => Number(r.id));
-    const pengujiTotal = pengujiKelas.length;
-
-    if (pengujiTotal === 0) {
-      hasil.filter((h: any) => h.kelas === k).forEach((h: any) => {
-        statusMap[Number(h.id)] = { lengkap: false, pengujiDone: 0, pengujiTotal: 0 };
-      });
-      continue;
+  hasil.forEach((h: any) => {
+    const pid = Number(h.id);
+    const pengujiId = pengujiAssignedMap[pid];
+    if (!pengujiId) {
+      statusMap[pid] = { lengkap: false, pengujiDone: 0, pengujiTotal: 1 };
+      return;
     }
-
-    const TOTAL_JURUS = 11;
-
-    const jurusCountRes = await turso.execute({
-      sql: `SELECT peserta_id, penguji_id, COUNT(*) as cnt FROM pondok_nilai_jurus
-            WHERE penguji_id IN (${pengujiKelas.join(',')})
-            GROUP BY peserta_id, penguji_id`,
-      args: [],
-    });
-    const teoriCountRes = totalTeoriItems > 0 ? await turso.execute({
-      sql: `SELECT peserta_id, penguji_id, COUNT(*) as cnt FROM pondok_nilai_teori
-            WHERE penguji_id IN (${pengujiKelas.join(',')})
-            GROUP BY peserta_id, penguji_id`,
-      args: [],
-    }) : { rows: [] };
-
-    const jurusMap: Record<string, number> = {};
-    jurusCountRes.rows.forEach((r: any) => { jurusMap[`${r.peserta_id}_${r.penguji_id}`] = Number(r.cnt); });
-    const teoriMap: Record<string, number> = {};
-    teoriCountRes.rows.forEach((r: any) => { teoriMap[`${r.peserta_id}_${r.penguji_id}`] = Number(r.cnt); });
-
-    hasil.filter((h: any) => h.kelas === k).forEach((h: any) => {
-      const pid = Number(h.id);
-      let done = 0;
-      for (const pengujiId of pengujiKelas) {
-        const key = `${pid}_${pengujiId}`;
-        const jurusDone = (jurusMap[key] || 0) >= TOTAL_JURUS;
-        const teoriDone = totalTeoriItems === 0 || (teoriMap[key] || 0) >= totalTeoriItems;
-        if (jurusDone && teoriDone) done++;
-      }
-      statusMap[pid] = { lengkap: done === pengujiTotal, pengujiDone: done, pengujiTotal };
-    });
-  }
+    const key = `${pid}_${pengujiId}`;
+    const jurusDone = (jurusMap[key] || 0) >= TOTAL_JURUS;
+    const teoriDone = totalTeoriItems === 0 || (teoriMap[key] || 0) >= totalTeoriItems;
+    const lengkap = jurusDone && teoriDone;
+    statusMap[pid] = { lengkap, pengujiDone: lengkap ? 1 : 0, pengujiTotal: 1 };
+  });
 
   const hasilWithStatus = hasil.map((h: any) => ({
     ...h,
