@@ -9,30 +9,95 @@ interface HasilItem {
   penguji_nama?: string;
 }
 
+function fmt(n: number) { return n % 1 === 0 ? n : n.toFixed(1); }
+
+function buildPrintHtml(putra: HasilItem[], putri: HasilItem[]) {
+  const tableRows = (list: HasilItem[]) => list.map((h, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${h.nama}</td>
+      <td>${h.penguji_nama || '-'}</td>
+      <td>${fmt(h.total_jurus)}</td>
+      <td>${fmt(h.total_teori)}</td>
+      <td><strong>${fmt(h.total_nilai)}</strong></td>
+      <td>${h.status.pengujiTotal === 0 ? '-' : h.status.lengkap ? 'LENGKAP' : 'Proses'}</td>
+    </tr>`).join('');
+
+  const table = (title: string, list: HasilItem[]) => `
+    <h2>${title}</h2>
+    <table>
+      <thead><tr><th>Rank</th><th>Nama</th><th>Penguji</th><th>Jurus</th><th>Teori</th><th>Total</th><th>Status</th></tr></thead>
+      <tbody>${tableRows(list)}</tbody>
+    </table>`;
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>Hasil Penilaian Asad Pondok</title>
+    <style>
+      body { font-family: Arial, sans-serif; font-size: 12px; margin: 20px; }
+      h1 { text-align: center; font-size: 16px; margin-bottom: 4px; }
+      h2 { font-size: 13px; margin: 20px 0 6px; color: #166534; }
+      p.sub { text-align: center; font-size: 11px; color: #555; margin-bottom: 16px; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+      th, td { border: 1px solid #ccc; padding: 5px 8px; text-align: left; }
+      th { background: #f3f4f6; }
+      td:nth-child(4), td:nth-child(5), td:nth-child(6) { text-align: right; }
+      @media print { body { margin: 10mm; } }
+    </style>
+  </head><body>
+    <h1>Hasil Penilaian Asad Pondok</h1>
+    <p class="sub">Persinas Asad Jakarta Barat</p>
+    ${table('PUTRA', putra)}
+    ${table('PUTRI', putri)}
+  </body></html>`;
+}
+
 export default function HasilPenilaianClient() {
-  const [hasil, setHasil] = useState<HasilItem[]>([]);
+  const [putra, setPutra] = useState<HasilItem[]>([]);
+  const [putri, setPutri] = useState<HasilItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterKelas, setFilterKelas] = useState('PUTRA');
+  const [printing, setPrinting] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    const res = await fetch(`/api/asadpondok/hasil?kelas=${filterKelas}`);
-    const data = await res.json();
-    setHasil(data.hasil || []);
+    const [resPutra, resPutri] = await Promise.all([
+      fetch('/api/asadpondok/hasil?kelas=PUTRA'),
+      fetch('/api/asadpondok/hasil?kelas=PUTRI'),
+    ]);
+    const [dataPutra, dataPutri] = await Promise.all([resPutra.json(), resPutri.json()]);
+    setPutra((dataPutra.hasil || []).sort((a: HasilItem, b: HasilItem) => b.total_nilai - a.total_nilai));
+    setPutri((dataPutri.hasil || []).sort((a: HasilItem, b: HasilItem) => b.total_nilai - a.total_nilai));
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [filterKelas]);
+  useEffect(() => { load(); }, []);
 
-  const putra = hasil.filter(h => h.kelas === 'PUTRA').sort((a, b) => b.total_nilai - a.total_nilai);
-  const putri = hasil.filter(h => h.kelas === 'PUTRI').sort((a, b) => b.total_nilai - a.total_nilai);
+  const handlePrint = async () => {
+    setPrinting(true);
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(buildPrintHtml(putra, putri));
+      win.document.close();
+      win.focus();
+      setTimeout(() => { win.print(); setPrinting(false); }, 300);
+    } else {
+      setPrinting(false);
+    }
+  };
+
   const displayed = filterKelas === 'PUTRA' ? putra : putri;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-900">Hasil Penilaian</h2>
-        <button onClick={load} className="text-sm text-green-600 hover:underline">🔄 Refresh</button>
+        <div className="flex gap-2">
+          <button onClick={handlePrint} disabled={printing || loading}
+            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+            🖨️ {printing ? 'Menyiapkan...' : 'Print PDF'}
+          </button>
+          <button onClick={load} className="text-sm text-green-600 hover:underline">🔄 Refresh</button>
+        </div>
       </div>
 
       <div className="flex gap-2 mb-4">
@@ -68,9 +133,9 @@ export default function HasilPenilaianClient() {
                   </td>
                   <td className="px-4 py-3">{h.nama}</td>
                   <td className="px-4 py-3 text-gray-600 text-xs">{h.penguji_nama || '-'}</td>
-                  <td className="px-4 py-3 text-right text-gray-600">{h.total_jurus % 1 === 0 ? h.total_jurus : h.total_jurus.toFixed(1)}</td>
-                  <td className="px-4 py-3 text-right text-gray-600">{h.total_teori % 1 === 0 ? h.total_teori : h.total_teori.toFixed(1)}</td>
-                  <td className="px-4 py-3 text-right font-bold text-green-700">{h.total_nilai % 1 === 0 ? h.total_nilai : h.total_nilai.toFixed(1)}</td>
+                  <td className="px-4 py-3 text-right text-gray-600">{fmt(h.total_jurus)}</td>
+                  <td className="px-4 py-3 text-right text-gray-600">{fmt(h.total_teori)}</td>
+                  <td className="px-4 py-3 text-right font-bold text-green-700">{fmt(h.total_nilai)}</td>
                   <td className="px-4 py-3 text-center">
                     {h.status.pengujiTotal === 0 ? (
                       <span className="text-gray-400 text-xs">-</span>
