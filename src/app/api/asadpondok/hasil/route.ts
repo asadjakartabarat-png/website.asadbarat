@@ -49,11 +49,7 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    const jurusDistinctRes = await turso.execute({
-      sql: `SELECT COUNT(DISTINCT jurus_nama) as cnt FROM pondok_nilai_jurus WHERE penguji_id IN (${pengujiKelas.join(',')})`,
-      args: [],
-    });
-    const totalJurusItems = Number(jurusDistinctRes.rows[0]?.cnt ?? 0);
+    const TOTAL_JURUS = 11;
 
     const jurusCountRes = await turso.execute({
       sql: `SELECT peserta_id, penguji_id, COUNT(*) as cnt FROM pondok_nilai_jurus
@@ -78,8 +74,9 @@ export async function GET(request: NextRequest) {
       let done = 0;
       for (const pengujiId of pengujiKelas) {
         const key = `${pid}_${pengujiId}`;
-        const jurusDone = totalJurusItems === 0 || (jurusMap[key] || 0) >= totalJurusItems;
-        if (jurusDone) done++;
+        const jurusDone = (jurusMap[key] || 0) >= TOTAL_JURUS;
+        const teoriDone = totalTeoriItems === 0 || (teoriMap[key] || 0) >= totalTeoriItems;
+        if (jurusDone && teoriDone) done++;
       }
       statusMap[pid] = { lengkap: done === pengujiTotal, pengujiDone: done, pengujiTotal };
     });
