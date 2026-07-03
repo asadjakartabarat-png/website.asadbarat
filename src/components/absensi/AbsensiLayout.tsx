@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Home, Users, Settings, UserCheck, BarChart3, FileText, Menu, X, LogOut, Landmark, ClipboardList, Mail, ChevronDown } from 'lucide-react';
+import { Home, Users, Settings, UserCheck, BarChart3, FileText, Menu, X, LogOut, Landmark, ClipboardList, Mail, ChevronDown, UserPlus, CalendarCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface AbsensiLayoutProps {
@@ -25,11 +25,13 @@ type NavEntry = NavLink | NavGroup;
 
 const isGroup = (e: NavEntry): e is NavGroup => 'children' in e;
 
-// Menu induk baru: Manajemen Asad Padepokan
+// Menu induk: Manajemen Asad Padepokan
 const padepokanGroup: NavGroup = {
   name: 'Manajemen Asad Padepokan',
   icon: Landmark,
   children: [
+    { name: 'Data Anggota', href: '/absensi/anggota', icon: UserPlus },
+    { name: 'Absensi Kegiatan', href: '/absensi/kegiatan', icon: CalendarCheck },
     { name: 'Notulensi Musyawarah', href: '/absensi/musyawarah', icon: ClipboardList },
     { name: 'Letter Generator', href: '/absensi/letter-generator', icon: Mail },
   ],
