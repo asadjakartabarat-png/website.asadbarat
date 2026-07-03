@@ -16,7 +16,7 @@ interface Musyawarah {
 }
 interface MusyawarahDetail extends Musyawarah { peserta: Peserta[]; }
 
-const inputCls = 'w-full border rounded-lg px-3 py-3 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-green-500';
+const inputCls = 'w-full border rounded-lg px-3 py-3 text-base sm:text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-green-500';
 
 const emptyForm = { judul: '', tanggal: '', tempat: '', catatan: '' };
 
@@ -138,13 +138,15 @@ export default function MusyawarahClient() {
               </div>
               <div className="space-y-2">
                 {peserta.map((row, i) => (
-                  <div key={i} className="flex gap-2">
+                  <div key={i} className="flex flex-col sm:flex-row gap-2">
                     <input value={row.nama} onChange={e => updatePeserta(i, 'nama', e.target.value)} placeholder="Nama" className={inputCls + ' flex-1'} />
-                    <input value={row.fungsi} onChange={e => updatePeserta(i, 'fungsi', e.target.value)} placeholder="Fungsi / Jabatan" className={inputCls + ' flex-1'} />
-                    <button type="button" onClick={() => removePeserta(i)} disabled={peserta.length === 1}
-                      className="border border-red-300 text-red-600 rounded-lg px-3 min-h-[44px] disabled:opacity-40" aria-label="Hapus baris">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="flex gap-2">
+                      <input value={row.fungsi} onChange={e => updatePeserta(i, 'fungsi', e.target.value)} placeholder="Fungsi / Jabatan" className={inputCls + ' flex-1'} />
+                      <button type="button" onClick={() => removePeserta(i)} disabled={peserta.length === 1}
+                        className="border border-red-300 text-red-600 rounded-lg px-3 min-h-[44px] disabled:opacity-40 shrink-0" aria-label="Hapus baris">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -153,7 +155,7 @@ export default function MusyawarahClient() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Isi / Catatan Musyawarah</label>
               <textarea value={form.catatan} onChange={e => setForm(p => ({ ...p, catatan: e.target.value }))}
-                rows={8} className="w-full border rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                rows={8} className="w-full border rounded-lg px-3 py-3 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="Tuliskan pokok bahasan, keputusan, dan hasil musyawarah..." />
             </div>
 
