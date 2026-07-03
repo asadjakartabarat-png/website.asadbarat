@@ -1146,3 +1146,71 @@ export async function checkPondokAssignmentComplete(pesertaId: number, pengujiId
   const teoriComplete = Number(teoriCount.rows[0].cnt) >= Number(teoriTotal.rows[0].cnt);
   return jurusComplete && teoriComplete;
 }
+// ============================================================
+// MUSYAWARAH (Manajemen Asad Padepokan)
+// Tambahkan blok ini di AKHIR file src/lib/turso/db.ts
+// ============================================================
+
+export async function getAllMusyawarah() {
+  const result = await turso.execute({
+    sql: `SELECT m.*, (SELECT COUNT(*) FROM absensi_musyawarah_peserta p WHERE p.musyawarah_id = m.id) as peserta_count
+          FROM absensi_musyawarah m
+          ORDER BY m.tanggal DESC, m.id DESC`,
+    args: [],
+  });
+  return result.rows;
+}
+
+export async function getMusyawarahById(id: number) {
+  const head = await turso.execute({ sql: `SELECT * FROM absensi_musyawarah WHERE id = ?`, args: [id] });
+  if (head.rows.length === 0) return null;
+  const peserta = await turso.execute({
+    sql: `SELECT nama, fungsi FROM absensi_musyawarah_peserta WHERE musyawarah_id = ? ORDER BY id`,
+    args: [id],
+  });
+  return { ...head.rows[0], peserta: peserta.rows };
+}
+
+export async function createMusyawarah(data: {
+  judul: string; tanggal: string; tempat?: string | null; catatan?: string | null;
+  created_by: number; peserta?: Array<{ nama: string; fungsi: string }>;
+}) {
+  const now = new Date().toISOString();
+  const res = await turso.execute({
+    sql: `INSERT INTO absensi_musyawarah (judul, tanggal, tempat, catatan, created_by, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    args: [data.judul, data.tanggal, data.tempat ?? null, data.catatan ?? null, data.created_by, now, now],
+  });
+  const musyawarahId = Number(res.lastInsertRowid);
+  for (const p of data.peserta ?? []) {
+    if (!p.nama?.trim()) continue;
+    await turso.execute({
+      sql: `INSERT INTO absensi_musyawarah_peserta (musyawarah_id, nama, fungsi) VALUES (?, ?, ?)`,
+      args: [musyawarahId, p.nama, p.fungsi ?? ''],
+    });
+  }
+}
+
+export async function updateMusyawarah(id: number, data: {
+  judul: string; tanggal: string; tempat?: string | null; catatan?: string | null;
+  peserta?: Array<{ nama: string; fungsi: string }>;
+}) {
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `UPDATE absensi_musyawarah SET judul=?, tanggal=?, tempat=?, catatan=?, updated_at=? WHERE id=?`,
+    args: [data.judul, data.tanggal, data.tempat ?? null, data.catatan ?? null, now, id],
+  });
+  await turso.execute({ sql: `DELETE FROM absensi_musyawarah_peserta WHERE musyawarah_id = ?`, args: [id] });
+  for (const p of data.peserta ?? []) {
+    if (!p.nama?.trim()) continue;
+    await turso.execute({
+      sql: `INSERT INTO absensi_musyawarah_peserta (musyawarah_id, nama, fungsi) VALUES (?, ?, ?)`,
+      args: [id, p.nama, p.fungsi ?? ''],
+    });
+  }
+}
+
+export async function deleteMusyawarah(id: number) {
+  await turso.execute({ sql: `DELETE FROM absensi_musyawarah_peserta WHERE musyawarah_id = ?`, args: [id] });
+  await turso.execute({ sql: `DELETE FROM absensi_musyawarah WHERE id = ?`, args: [id] });
+}
