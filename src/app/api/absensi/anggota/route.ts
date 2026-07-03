@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllAnggota, createAnggota, updateAnggota, deleteAnggota, bulkCreateAnggota } from '@/lib/turso/db';
+import { getAllAnggota, createAnggota, updateAnggota, deleteAnggota, bulkCreateAnggota } from '@/lib/turso/absensiPadepokan';
 
 const ALLOWED = ['super_admin', 'koordinator_daerah', 'astrida'];
 

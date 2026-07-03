@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllKegiatan, getKegiatanById, createKegiatan, updateKegiatan, deleteKegiatan } from '@/lib/turso/db';
+import { getAllKegiatan, getKegiatanById, createKegiatan, updateKegiatan, deleteKegiatan } from '@/lib/turso/absensiPadepokan';
 
 const ALLOWED = ['super_admin', 'koordinator_daerah', 'astrida'];
 

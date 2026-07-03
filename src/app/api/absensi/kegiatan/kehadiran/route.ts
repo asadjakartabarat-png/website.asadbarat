@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveKehadiran } from '@/lib/turso/db';
+import { saveKehadiran } from '@/lib/turso/absensiPadepokan';
 
 const ALLOWED = ['super_admin', 'koordinator_daerah', 'astrida'];
 
