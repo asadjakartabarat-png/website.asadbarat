@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, Users, Calendar, MapPin, X, UserCheck, Search } from 'lucide-react';
+import { Plus, Trash2, Users, Calendar, MapPin, X, UserCheck, Search, Copy, ExternalLink } from 'lucide-react';
 
 interface Peserta { nama: string; fungsi: string; }
 interface Musyawarah {
@@ -13,6 +13,8 @@ interface Musyawarah {
   catatan: string | null;
   peserta_count?: number;
   created_at?: string;
+  is_public?: number;
+  public_token?: string | null;
 }
 interface MusyawarahDetail extends Musyawarah { peserta: Peserta[]; }
 interface Desa { id: number; nama_desa: string; }
@@ -154,6 +156,28 @@ export default function MusyawarahClient() {
     setShowForm(false); resetForm(); load();
   };
 
+  const togglePublic = async (m: Musyawarah) => {
+    const next = m.is_public ? 0 : 1;
+    const res = await fetch('/api/absensi/musyawarah', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: m.id, is_public: next }),
+    });
+    if (!res.ok) { toast.error('Gagal mengubah status publik'); return; }
+    const j = await res.json();
+    setList(prev => prev.map(x => x.id === m.id ? { ...x, is_public: j.is_public, public_token: j.public_token } : x));
+    toast.success(next ? 'Halaman publik aktif' : 'Halaman publik dinonaktifkan');
+  };
+
+  const copyPublicLink = async (tokenValue: string) => {
+    const url = `${window.location.origin}/notulensi/${tokenValue}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Link disalin');
+    } catch {
+      toast.error('Gagal menyalin link');
+    }
+  };
+
   const handleDelete = async (id: number) => {
     if (!confirm('Hapus notulensi ini beserta daftar pesertanya?')) return;
     await fetch('/api/absensi/musyawarah', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
@@ -257,6 +281,33 @@ export default function MusyawarahClient() {
                 </div>
                 {m.catatan && <p className="mt-2 text-sm text-gray-600 line-clamp-3 whitespace-pre-wrap">{m.catatan}</p>}
               </div>
+              {/* Halaman publik */}
+              <div className="flex items-center justify-between gap-2 pt-3 mt-3 border-t">
+                <button type="button" role="switch" aria-checked={!!m.is_public}
+                  onClick={() => togglePublic(m)}
+                  className="flex items-center gap-2 shrink-0"
+                  aria-label="Aktifkan halaman publik">
+                  <span className={`relative w-9 h-5 rounded-full transition-colors ${m.is_public ? 'bg-green-600' : 'bg-gray-300'}`}>
+                    <span className={`absolute top-0.5 left-0.5 h-4 w-4 bg-white rounded-full shadow transition-transform ${m.is_public ? 'translate-x-4' : ''}`} />
+                  </span>
+                  <span className={`text-xs font-medium ${m.is_public ? 'text-green-700' : 'text-gray-400'}`}>
+                    {m.is_public ? 'Publik' : 'Privat'}
+                  </span>
+                </button>
+                {m.is_public && m.public_token && (
+                  <div className="flex gap-1">
+                    <button type="button" onClick={() => copyPublicLink(m.public_token!)}
+                      className="border text-gray-600 rounded-md p-2 hover:bg-gray-50" aria-label="Salin link publik" title="Salin link">
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                    <a href={`/notulensi/${m.public_token}`} target="_blank" rel="noopener noreferrer"
+                      className="border border-green-600 text-green-700 rounded-md p-2 hover:bg-green-50" aria-label="Buka halaman publik" title="Buka halaman publik">
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-2 pt-3 mt-3 border-t">
                 <button type="button" onClick={() => openDetail(m.id)} className="flex-1 border border-green-600 text-green-700 py-2 rounded-lg text-sm min-h-[40px]">Detail</button>
                 <button type="button" onClick={() => openEdit(m.id)} className="flex-1 border border-blue-500 text-blue-600 py-2 rounded-lg text-sm min-h-[40px]">Edit</button>
