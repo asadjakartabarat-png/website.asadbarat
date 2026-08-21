@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllMusyawarah, getMusyawarahById, createMusyawarah, updateMusyawarah, deleteMusyawarah } from '@/lib/turso/db';
+import { getAllMusyawarah, getMusyawarahById, createMusyawarah, updateMusyawarah, deleteMusyawarah, setMusyawarahPublic } from '@/lib/turso/db';
 
 const ALLOWED = ['super_admin', 'koordinator_daerah', 'astrida'];
 
@@ -47,6 +47,16 @@ export async function PUT(req: NextRequest) {
     peserta: data.peserta ?? [],
   });
   return NextResponse.json({ success: true });
+}
+
+// Aktif/nonaktifkan halaman publik notulensi.
+export async function PATCH(req: NextRequest) {
+  const session = getSession(req);
+  if (!session || !ALLOWED.includes(session.role)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { id, is_public } = await req.json();
+  const result = await setMusyawarahPublic(Number(id), !!is_public);
+  if (!result) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json({ success: true, ...result });
 }
 
 export async function DELETE(req: NextRequest) {
