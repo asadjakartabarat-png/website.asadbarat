@@ -22,6 +22,7 @@ interface AnggotaOpt {
 }
 
 const inputCls = 'w-full border rounded-lg px-3 py-3 text-base sm:text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-green-500';
+const pesertaInputCls = 'w-full min-w-0 border rounded-md px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500';
 
 const emptyForm = { judul: '', tanggal: '', tempat: '', catatan: '' };
 
@@ -194,8 +195,10 @@ export default function MusyawarahClient() {
 
             {/* Peserta hadir */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">Peserta Hadir</label>
+              <div className="flex items-center justify-between mb-2 flex-wrap gap-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Peserta Hadir <span className="text-gray-400 font-normal">({peserta.filter(p => p.nama.trim()).length})</span>
+                </label>
                 <div className="flex items-center gap-3">
                   <button type="button" onClick={openPicker} className="text-green-700 text-sm font-medium flex items-center gap-1 hover:underline">
                     <UserCheck className="h-4 w-4" /> Pilih dari Data Anggota
@@ -205,17 +208,15 @@ export default function MusyawarahClient() {
                   </button>
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="border rounded-lg divide-y max-h-72 overflow-y-auto">
                 {peserta.map((row, i) => (
-                  <div key={i} className="flex flex-col sm:flex-row gap-2">
-                    <input value={row.nama} onChange={e => updatePeserta(i, 'nama', e.target.value)} placeholder="Nama" className={inputCls + ' flex-1'} />
-                    <div className="flex gap-2">
-                      <input value={row.fungsi} onChange={e => updatePeserta(i, 'fungsi', e.target.value)} placeholder="Fungsi / Jabatan" className={inputCls + ' flex-1'} />
-                      <button type="button" onClick={() => removePeserta(i)} disabled={peserta.length === 1}
-                        className="border border-red-300 text-red-600 rounded-lg px-3 min-h-[44px] disabled:opacity-40 shrink-0" aria-label="Hapus baris">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
+                  <div key={i} className="grid grid-cols-[1.2fr_1fr_auto] gap-1.5 items-center px-2 py-1.5">
+                    <input value={row.nama} onChange={e => updatePeserta(i, 'nama', e.target.value)} placeholder="Nama" className={pesertaInputCls} />
+                    <input value={row.fungsi} onChange={e => updatePeserta(i, 'fungsi', e.target.value)} placeholder="Fungsi" className={pesertaInputCls} />
+                    <button type="button" onClick={() => removePeserta(i)} disabled={peserta.length === 1}
+                      className="border border-red-300 text-red-600 rounded-md p-2 disabled:opacity-40 shrink-0" aria-label="Hapus baris">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 ))}
               </div>
