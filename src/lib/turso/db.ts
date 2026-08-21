@@ -1214,3 +1214,37 @@ export async function deleteMusyawarah(id: number) {
   await turso.execute({ sql: `DELETE FROM absensi_musyawarah_peserta WHERE musyawarah_id = ?`, args: [id] });
   await turso.execute({ sql: `DELETE FROM absensi_musyawarah WHERE id = ?`, args: [id] });
 }
+
+// ---------------- HALAMAN PUBLIK MUSYAWARAH ----------------
+// Kode acak 16 karakter untuk URL publik yang tidak bisa ditebak.
+function generatePublicToken() {
+  return crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+}
+
+// Aktifkan / nonaktifkan halaman publik. Token dibuat sekali saja lalu
+// dipakai ulang, supaya link yang sudah terlanjur disebar tetap berlaku
+// bila notulensi diaktifkan kembali.
+export async function setMusyawarahPublic(id: number, isPublic: boolean) {
+  const found = await turso.execute({ sql: `SELECT public_token FROM absensi_musyawarah WHERE id = ?`, args: [id] });
+  if (found.rows.length === 0) return null;
+  let token = (found.rows[0].public_token as string | null) ?? null;
+  if (isPublic && !token) token = generatePublicToken();
+  await turso.execute({
+    sql: `UPDATE absensi_musyawarah SET is_public = ?, public_token = ? WHERE id = ?`,
+    args: [isPublic ? 1 : 0, token, id],
+  });
+  return { is_public: isPublic ? 1 : 0, public_token: token };
+}
+
+// Hanya kolom yang boleh dilihat publik yang di-SELECT: judul, tanggal,
+// catatan. Peserta & tempat sengaja tidak pernah ikut terambil.
+export async function getPublicMusyawarahByToken(token: string) {
+  const res = await turso.execute({
+    sql: `SELECT judul, tanggal, catatan, updated_at
+          FROM absensi_musyawarah
+          WHERE public_token = ? AND is_public = 1
+          LIMIT 1`,
+    args: [token],
+  });
+  return res.rows.length ? res.rows[0] : null;
+}
