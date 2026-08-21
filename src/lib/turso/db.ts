@@ -1189,6 +1189,19 @@ export async function createMusyawarah(data: {
       args: [musyawarahId, p.nama, p.fungsi ?? ''],
     });
   }
+  return musyawarahId;
+}
+
+// Auto-save: sengaja HANYA menyentuh kolom catatan. Tidak memakai
+// updateMusyawarah() karena fungsi itu menghapus lalu menulis ulang
+// seluruh daftar peserta — berbahaya bila dijalankan tiap beberapa detik.
+export async function updateMusyawarahCatatan(id: number, catatan: string) {
+  const now = new Date().toISOString();
+  const res = await turso.execute({
+    sql: `UPDATE absensi_musyawarah SET catatan = ?, updated_at = ? WHERE id = ?`,
+    args: [catatan, now, id],
+  });
+  return res.rowsAffected > 0;
 }
 
 export async function updateMusyawarah(id: number, data: {
