@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { Plus, Trash2, Users, Calendar, MapPin, X, UserCheck, Search, Copy, ExternalLink } from 'lucide-react';
 
@@ -28,6 +28,13 @@ const pesertaInputCls = 'w-full min-w-0 border rounded-md px-2.5 py-2 text-sm fo
 
 const emptyForm = { judul: '', tanggal: '', tempat: '', catatan: '' };
 
+// Jeda auto-save: menyimpan 2 detik setelah notulis berhenti mengetik.
+const AUTOSAVE_MS = 2000;
+
+function jam(d: Date) {
+  return [d.getHours(), d.getMinutes(), d.getSeconds()].map(n => String(n).padStart(2, '0')).join(':');
+}
+
 function formatTanggal(t: string) {
   if (!t) return '-';
   const d = new Date(t.length <= 10 ? t + 'T00:00:00' : t);
@@ -53,6 +60,13 @@ export default function MusyawarahClient() {
   const [pickerDesa, setPickerDesa] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  // Isi catatan terakhir yang sudah pasti tersimpan di server — dipakai
+  // agar auto-save tidak menembak ulang kalau tidak ada perubahan.
+  const lastSavedCatatan = useRef('');
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const load = async () => {
     setLoading(true);
     const res = await fetch('/api/absensi/musyawarah').then(r => r.json());
@@ -77,6 +91,48 @@ export default function MusyawarahClient() {
     setForm(emptyForm);
     setPeserta([{ nama: '', fungsi: '' }]);
     setEditingId(null);
+    lastSavedCatatan.current = '';
+    setSaveState('idle');
+    setSavedAt(null);
+  };
+
+  // Menyimpan catatan saja. Dipakai oleh auto-save maupun saat form ditutup.
+  const saveCatatan = async (id: number, catatan: string) => {
+    setSaveState('saving');
+    try {
+      const res = await fetch('/api/absensi/musyawarah', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, catatan }),
+      });
+      if (!res.ok) throw new Error('gagal');
+      lastSavedCatatan.current = catatan;
+      setSaveState('saved');
+      setSavedAt(new Date());
+    } catch {
+      setSaveState('error');
+    }
+  };
+
+  // Auto-save dengan debounce: menunggu notulis berhenti mengetik sejenak,
+  // supaya tidak menulis ke database tiap ketukan tombol.
+  useEffect(() => {
+    if (!showForm || !editingId) return;
+    if (form.catatan === lastSavedCatatan.current) return;
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(() => saveCatatan(editingId, form.catatan), AUTOSAVE_MS);
+    return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current); };
+  }, [form.catatan, editingId, showForm]);
+
+  // Menutup form: pastikan perubahan yang belum sempat tersimpan ikut
+  // tersimpan dulu, jangan sampai catatan musyawarah hilang.
+  const closeForm = async () => {
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    if (editingId && form.catatan !== lastSavedCatatan.current) {
+      await saveCatatan(editingId, form.catatan);
+    }
+    setShowForm(false);
+    resetForm();
+    load();
   };
 
   const openCreate = () => { resetForm(); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); };
@@ -88,6 +144,11 @@ export default function MusyawarahClient() {
     setEditingId(id);
     setForm({ judul: d.judul, tanggal: (d.tanggal || '').slice(0, 10), tempat: d.tempat || '', catatan: d.catatan || '' });
     setPeserta(d.peserta && d.peserta.length ? d.peserta : [{ nama: '', fungsi: '' }]);
+    // Tandai isi yang baru dimuat sebagai "sudah tersimpan" agar auto-save
+    // tidak langsung menembak padahal notulis belum mengetik apa pun.
+    lastSavedCatatan.current = d.catatan || '';
+    setSaveState('idle');
+    setSavedAt(null);
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -144,6 +205,7 @@ export default function MusyawarahClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     setSaving(true);
     const cleanPeserta = peserta.filter(p => p.nama.trim());
     const body = { ...form, peserta: cleanPeserta };
@@ -151,9 +213,23 @@ export default function MusyawarahClient() {
     const payload = editingId ? { id: editingId, ...body } : body;
     const res = await fetch('/api/absensi/musyawarah', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     setSaving(false);
-    if (res.ok) { toast.success(editingId ? 'Notulensi diperbarui' : 'Notulensi disimpan'); }
-    else { toast.error('Gagal menyimpan'); return; }
-    setShowForm(false); resetForm(); load();
+    if (!res.ok) { toast.error('Gagal menyimpan'); return; }
+
+    lastSavedCatatan.current = form.catatan;
+    setSaveState('saved');
+    setSavedAt(new Date());
+
+    if (editingId) {
+      toast.success('Notulensi diperbarui');
+      setShowForm(false); resetForm();
+    } else {
+      // Notulensi baru: form sengaja dibiarkan terbuka dan berpindah ke
+      // mode edit, supaya notulis bisa langsung mengetik dengan auto-save.
+      const j = await res.json().catch(() => ({} as { id?: number }));
+      if (j.id) setEditingId(j.id);
+      toast.success('Notulensi disimpan — catatan kini tersimpan otomatis');
+    }
+    load();
   };
 
   const togglePublic = async (m: Musyawarah) => {
@@ -247,7 +323,20 @@ export default function MusyawarahClient() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Isi / Catatan Musyawarah</label>
+              <div className="flex items-center justify-between mb-1 gap-2">
+                <label className="block text-sm font-medium text-gray-700">Isi / Catatan Musyawarah</label>
+                {editingId && (
+                  <span className={`text-xs font-medium shrink-0 ${
+                    saveState === 'error' ? 'text-red-600'
+                    : saveState === 'saved' ? 'text-green-700'
+                    : 'text-gray-400'}`}>
+                    {saveState === 'saving' ? 'Menyimpan…'
+                      : saveState === 'saved' && savedAt ? `✓ Tersimpan ${jam(savedAt)}`
+                      : saveState === 'error' ? '⚠ Gagal menyimpan'
+                      : 'Tersimpan otomatis'}
+                  </span>
+                )}
+              </div>
               <textarea value={form.catatan} onChange={e => setForm(p => ({ ...p, catatan: e.target.value }))}
                 rows={8} className="w-full border rounded-lg px-3 py-3 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="Tuliskan pokok bahasan, keputusan, dan hasil musyawarah..." />
@@ -257,7 +346,9 @@ export default function MusyawarahClient() {
               <button type="submit" disabled={saving} className="flex-1 bg-green-700 text-white py-3 rounded-lg text-sm font-medium min-h-[44px] hover:bg-green-800 disabled:opacity-60">
                 {saving ? 'Menyimpan...' : 'Simpan'}
               </button>
-              <button type="button" onClick={() => { setShowForm(false); resetForm(); }} className="flex-1 border py-3 rounded-lg text-sm min-h-[44px]">Batal</button>
+              <button type="button" onClick={closeForm} className="flex-1 border py-3 rounded-lg text-sm min-h-[44px]">
+                {editingId ? 'Tutup' : 'Batal'}
+              </button>
             </div>
           </form>
         </div>
