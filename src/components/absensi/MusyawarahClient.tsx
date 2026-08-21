@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, Users, Calendar, MapPin, X } from 'lucide-react';
+import { Plus, Trash2, Users, Calendar, MapPin, X, UserCheck, Search } from 'lucide-react';
 
 interface Peserta { nama: string; fungsi: string; }
 interface Musyawarah {
@@ -15,6 +15,11 @@ interface Musyawarah {
   created_at?: string;
 }
 interface MusyawarahDetail extends Musyawarah { peserta: Peserta[]; }
+interface Desa { id: number; nama_desa: string; }
+interface AnggotaOpt {
+  id: number; nama: string; status: string | null; aktif: number;
+  desa_id: number | null; nama_desa: string | null; nama_kelompok: string | null;
+}
 
 const inputCls = 'w-full border rounded-lg px-3 py-3 text-base sm:text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-green-500';
 
@@ -37,6 +42,14 @@ export default function MusyawarahClient() {
   const [detail, setDetail] = useState<MusyawarahDetail | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const [anggotaList, setAnggotaList] = useState<AnggotaOpt[]>([]);
+  const [desaList, setDesaList] = useState<Desa[]>([]);
+  const [loadingAnggota, setLoadingAnggota] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState('');
+  const [pickerDesa, setPickerDesa] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
   const load = async () => {
     setLoading(true);
     const res = await fetch('/api/absensi/musyawarah').then(r => r.json());
@@ -44,6 +57,18 @@ export default function MusyawarahClient() {
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
+
+  const loadAnggotaOptions = async () => {
+    if (anggotaList.length || loadingAnggota) return;
+    setLoadingAnggota(true);
+    const [a, d] = await Promise.all([
+      fetch('/api/absensi/anggota').then(r => r.json()),
+      fetch('/api/absensi/desa').then(r => r.json()),
+    ]);
+    setAnggotaList((a.data || []).filter((x: AnggotaOpt) => x.aktif));
+    setDesaList(d.data || []);
+    setLoadingAnggota(false);
+  };
 
   const resetForm = () => {
     setForm(emptyForm);
@@ -74,6 +99,45 @@ export default function MusyawarahClient() {
   const removePeserta = (i: number) => setPeserta(p => p.filter((_, idx) => idx !== i));
   const updatePeserta = (i: number, key: keyof Peserta, val: string) =>
     setPeserta(p => p.map((row, idx) => idx === i ? { ...row, [key]: val } : row));
+
+  const openPicker = () => {
+    setSelectedIds(new Set());
+    setPickerSearch('');
+    setPickerDesa('');
+    setShowPicker(true);
+    loadAnggotaOptions();
+  };
+
+  const togglePick = (id: number) => setSelectedIds(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+
+  const filteredAnggota = useMemo(() => anggotaList.filter(a => {
+    if (pickerDesa && String(a.desa_id) !== pickerDesa) return false;
+    if (pickerSearch && !a.nama.toLowerCase().includes(pickerSearch.toLowerCase())) return false;
+    return true;
+  }), [anggotaList, pickerSearch, pickerDesa]);
+
+  const selectAllFiltered = () => setSelectedIds(prev => {
+    const next = new Set(prev);
+    filteredAnggota.forEach(a => next.add(a.id));
+    return next;
+  });
+
+  const confirmPicker = () => {
+    const chosen = anggotaList.filter(a => selectedIds.has(a.id));
+    setPeserta(prev => {
+      const existingNames = new Set(prev.map(p => p.nama.trim().toLowerCase()).filter(Boolean));
+      const additions = chosen
+        .filter(a => !existingNames.has(a.nama.trim().toLowerCase()))
+        .map(a => ({ nama: a.nama, fungsi: a.status || '' }));
+      const merged = [...prev.filter(p => p.nama.trim()), ...additions];
+      return merged.length ? merged : [{ nama: '', fungsi: '' }];
+    });
+    setShowPicker(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,9 +196,14 @@ export default function MusyawarahClient() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-gray-700">Peserta Hadir</label>
-                <button type="button" onClick={addPeserta} className="text-green-700 text-sm font-medium flex items-center gap-1 hover:underline">
-                  <Plus className="h-4 w-4" /> Tambah Baris
-                </button>
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={openPicker} className="text-green-700 text-sm font-medium flex items-center gap-1 hover:underline">
+                    <UserCheck className="h-4 w-4" /> Pilih dari Data Anggota
+                  </button>
+                  <button type="button" onClick={addPeserta} className="text-green-700 text-sm font-medium flex items-center gap-1 hover:underline">
+                    <Plus className="h-4 w-4" /> Tambah Baris
+                  </button>
+                </div>
               </div>
               <div className="space-y-2">
                 {peserta.map((row, i) => (
@@ -194,6 +263,62 @@ export default function MusyawarahClient() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal pilih anggota */}
+      {showPicker && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4">
+          <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b">
+              <h2 className="font-semibold text-lg">Pilih dari Data Anggota</h2>
+              <button type="button" onClick={() => setShowPicker(false)} className="text-gray-400 hover:text-gray-600 p-1"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="p-4 border-b flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input value={pickerSearch} onChange={e => setPickerSearch(e.target.value)} placeholder="Cari nama..." className={inputCls + ' pl-9'} />
+              </div>
+              <select value={pickerDesa} onChange={e => setPickerDesa(e.target.value)} className={inputCls + ' sm:w-48'}>
+                <option value="">Semua Desa</option>
+                {desaList.map(d => <option key={d.id} value={d.id}>{d.nama_desa}</option>)}
+              </select>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-2">
+              {loadingAnggota ? (
+                <p className="text-center text-gray-400 py-8">Memuat data anggota...</p>
+              ) : filteredAnggota.length === 0 ? (
+                <p className="text-center text-gray-400 py-8">Tidak ada anggota ditemukan</p>
+              ) : (
+                <>
+                  <button type="button" onClick={selectAllFiltered} className="text-xs text-green-700 font-medium hover:underline mb-1">
+                    Pilih semua ({filteredAnggota.length})
+                  </button>
+                  <div className="divide-y">
+                    {filteredAnggota.map(a => (
+                      <label key={a.id} className="flex items-center gap-3 py-2.5 cursor-pointer select-none">
+                        <input type="checkbox" checked={selectedIds.has(a.id)} onChange={() => togglePick(a.id)}
+                          className="h-4 w-4 shrink-0 accent-green-700" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-medium text-gray-900">{a.nama}</span>
+                          <span className="block text-xs text-gray-500">
+                            {a.nama_desa || '-'}{a.nama_kelompok ? ' · ' + a.nama_kelompok : ''}{a.status ? ' · ' + a.status : ''}
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex gap-3 p-4 border-t">
+              <button type="button" onClick={confirmPicker} disabled={selectedIds.size === 0}
+                className="flex-1 bg-green-700 text-white py-3 rounded-lg text-sm font-medium min-h-[44px] hover:bg-green-800 disabled:opacity-50">
+                Tambahkan {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
+              </button>
+              <button type="button" onClick={() => setShowPicker(false)} className="flex-1 border py-3 rounded-lg text-sm min-h-[44px]">Batal</button>
+            </div>
+          </div>
         </div>
       )}
 
