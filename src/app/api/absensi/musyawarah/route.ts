@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllMusyawarah, getMusyawarahById, createMusyawarah, updateMusyawarah, deleteMusyawarah, setMusyawarahPublic } from '@/lib/turso/db';
+import { getAllMusyawarah, getMusyawarahById, createMusyawarah, updateMusyawarah, deleteMusyawarah, setMusyawarahPublic, updateMusyawarahCatatan } from '@/lib/turso/db';
 
 const ALLOWED = ['super_admin', 'koordinator_daerah', 'astrida'];
 
@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
   const session = getSession(req);
   if (!session || !ALLOWED.includes(session.role)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await req.json();
-  await createMusyawarah({
+  // id dikembalikan agar form bisa langsung lanjut ke mode edit + auto-save.
+  const id = await createMusyawarah({
     judul: body.judul,
     tanggal: body.tanggal,
     tempat: body.tempat ?? null,
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
     created_by: session.id,
     peserta: body.peserta ?? [],
   });
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, id });
 }
 
 export async function PUT(req: NextRequest) {
@@ -49,12 +50,20 @@ export async function PUT(req: NextRequest) {
   return NextResponse.json({ success: true });
 }
 
-// Aktif/nonaktifkan halaman publik notulensi.
+// Dua keperluan ringan: auto-save catatan, dan toggle halaman publik.
 export async function PATCH(req: NextRequest) {
   const session = getSession(req);
   if (!session || !ALLOWED.includes(session.role)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { id, is_public } = await req.json();
-  const result = await setMusyawarahPublic(Number(id), !!is_public);
+  const body = await req.json();
+
+  // Auto-save — hanya kolom catatan yang ditulis, peserta tidak tersentuh.
+  if (typeof body.catatan === 'string') {
+    const ok = await updateMusyawarahCatatan(Number(body.id), body.catatan);
+    if (!ok) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json({ success: true });
+  }
+
+  const result = await setMusyawarahPublic(Number(body.id), !!body.is_public);
   if (!result) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json({ success: true, ...result });
 }
