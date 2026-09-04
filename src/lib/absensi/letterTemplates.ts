@@ -31,7 +31,7 @@ export interface LetterTemplate {
   showKelompok?: boolean;
 }
 
-const KOP_PADEPOKAN: Kop = {
+export const KOP_PADEPOKAN: Kop = {
   baris1: 'PENGURUS PADEPOKAN',
   baris2: 'PERGURUAN PENCAK SILAT NASIONAL',
   baris3: 'ASAD',
@@ -40,7 +40,7 @@ const KOP_PADEPOKAN: Kop = {
   kontak: 'Telp. 021 541 4520  ·  E-mail : asad.jakartabarat@gmail.com',
 };
 
-const KOP_KOTA: Kop = {
+export const KOP_KOTA: Kop = {
   baris1: 'PENGURUS KOTA',
   baris2: 'PERGURUAN PENCAK SILAT NASIONAL',
   baris3: 'ASAD',
