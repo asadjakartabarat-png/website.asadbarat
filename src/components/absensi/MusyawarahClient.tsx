@@ -471,11 +471,6 @@ export default function MusyawarahClient() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50" onClick={() => setDetail(null)} />
           <div className="relative bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto">
-            {/* Konten khusus cetak/PDF — tersembunyi di layar, hanya tampil saat window.print() */}
-            <MusyawarahPrintView
-              data={{ judul: detail.judul, tanggal: detail.tanggal, tempat: detail.tempat, catatan: detail.catatan, peserta: detail.peserta || [] }}
-              printedAt={new Date()}
-            />
             <div className="flex items-start justify-between p-5 border-b sticky top-0 bg-white">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">{detail.judul}</h2>
@@ -513,6 +508,15 @@ export default function MusyawarahClient() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Konten khusus cetak/PDF — di luar area modal (yang punya overflow-y-auto
+          + max-height) supaya seluruh isi ikut tercetak, tidak terpotong. */}
+      {detail && (
+        <MusyawarahPrintView
+          data={{ judul: detail.judul, tanggal: detail.tanggal, tempat: detail.tempat, catatan: detail.catatan, peserta: detail.peserta || [] }}
+          printedAt={new Date()}
+        />
       )}
     </div>
   );

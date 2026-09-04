@@ -76,9 +76,10 @@ export default function MusyawarahPrintView({ data, printedAt }: { data: Musyawa
         }
       `}</style>
 
-      {/* Diposisikan di luar layar saat tampilan normal; dipindah ke (0,0)
-          hanya saat mode cetak lewat CSS di atas. */}
-      <div id="musyawarah-print-area" style={{ position: 'absolute', left: -99999, top: 0 }}>
+      {/* Diposisikan di luar layar saat tampilan normal (fixed → kebal dari
+          overflow/clip ancestor manapun); dipindah ke (0,0) hanya saat mode
+          cetak lewat CSS di atas. */}
+      <div id="musyawarah-print-area" style={{ position: 'fixed', left: -99999, top: 0 }}>
         <div style={S.paper}>
           <div style={S.kopBox}>
             <img src="/images/logo.png" alt="" style={S.kopLogo} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
