@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, Users, Calendar, MapPin, X, UserCheck, Search, Copy, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, Users, Calendar, MapPin, X, UserCheck, Search, Copy, ExternalLink, Printer } from 'lucide-react';
+import MusyawarahPrintView from './MusyawarahPrintView';
 
 interface Peserta { nama: string; fungsi: string; }
 interface Musyawarah {
@@ -470,12 +471,24 @@ export default function MusyawarahClient() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50" onClick={() => setDetail(null)} />
           <div className="relative bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto">
+            {/* Konten khusus cetak/PDF — tersembunyi di layar, hanya tampil saat window.print() */}
+            <MusyawarahPrintView
+              data={{ judul: detail.judul, tanggal: detail.tanggal, tempat: detail.tempat, catatan: detail.catatan, peserta: detail.peserta || [] }}
+              printedAt={new Date()}
+            />
             <div className="flex items-start justify-between p-5 border-b sticky top-0 bg-white">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">{detail.judul}</h2>
                 <p className="text-sm text-gray-500">{formatTanggal(detail.tanggal)}{detail.tempat ? ` · ${detail.tempat}` : ''}</p>
               </div>
-              <button type="button" onClick={() => setDetail(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button type="button" onClick={() => window.print()}
+                  className="bg-green-700 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-green-800 flex items-center gap-1.5"
+                  title="Cetak atau simpan sebagai PDF">
+                  <Printer className="h-4 w-4" /> <span className="hidden sm:inline">Cetak /</span> PDF
+                </button>
+                <button type="button" onClick={() => setDetail(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+              </div>
             </div>
             <div className="p-5 space-y-4">
               <div>
