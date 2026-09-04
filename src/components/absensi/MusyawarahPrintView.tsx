@@ -1,7 +1,6 @@
 'use client';
 
 import { CSSProperties } from 'react';
-import { KOP_PADEPOKAN } from '@/lib/absensi/letterTemplates';
 
 export interface PrintPeserta { nama: string; fungsi: string; }
 export interface MusyawarahPrintData {
@@ -81,16 +80,6 @@ export default function MusyawarahPrintView({ data, printedAt }: { data: Musyawa
           cetak lewat CSS di atas. */}
       <div id="musyawarah-print-area" style={{ position: 'fixed', left: -99999, top: 0 }}>
         <div style={S.paper}>
-          <div style={S.kopBox}>
-            <img src="/images/logo.png" alt="" style={S.kopLogo} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            <p style={S.kopB1}>{KOP_PADEPOKAN.baris1}</p>
-            <p style={S.kopB2}>{KOP_PADEPOKAN.baris2}</p>
-            <p style={S.kopB3}>{KOP_PADEPOKAN.baris3}</p>
-            <p style={S.kopB4}>{KOP_PADEPOKAN.baris4}</p>
-            <p style={S.kopAlamat}>{KOP_PADEPOKAN.alamat}</p>
-            <p style={S.kopKontak}>{KOP_PADEPOKAN.kontak}</p>
-          </div>
-
           <p style={S.title}>NOTULENSI MUSYAWARAH</p>
           <p style={S.subtitle}>{data.judul}</p>
 
